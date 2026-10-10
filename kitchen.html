@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>ออเดอร์หลังร้าน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600&family=Pattaya&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* สีชุดเดียวกับหน้าเมนูของลูกค้า */
+    --chili: #B01116; --chili-deep: #8A0B10;
+    --celadon: #F6F1E7; --celadon-line: #E4DACA;
+    --paper: #FFFDF8; --ink: #141210; --ink-soft: #5E564B; --sesame: #F4C542;
+    --display: 'Pattaya', 'Kanit', 'Thonburi', system-ui, sans-serif;
+    --body: 'Kanit', 'Noto Sans Thai', 'Thonburi', system-ui, sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--celadon); color: var(--ink); font-family: var(--body); line-height: 1.5; }
+  button, input { font: inherit; color: inherit; }
+  button { cursor: pointer; touch-action: manipulation; }
+  :focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+
+  .top { background: var(--ink); color: var(--paper); padding: .75rem 1rem; display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: center; justify-content: space-between; }
+  .top h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 1.375rem; }
+  .top p { margin: 0; font-size: .9375rem; }
+  .top p.bad { background: var(--chili); padding: .125rem .625rem; border-radius: 6px; }
+
+  .gate { max-width: 24rem; margin: 3rem auto; padding: 0 1rem; }
+  .gate label { display: block; font-weight: 600; margin-bottom: .375rem; }
+  .gate input { width: 100%; padding: .75rem; font-size: 1.25rem; border: 1.5px solid var(--ink); border-radius: 12px; background: #fff; }
+  .gate .msg { color: var(--chili-deep); font-weight: 500; min-height: 1.5rem; margin: .5rem 0; }
+  .btn { min-height: 3rem; padding: 0 1.25rem; border: 0; border-radius: 12px; background: var(--chili); color: #fff; font-weight: 600; width: 100%; }
+  .btn.quiet { background: var(--paper); color: var(--ink); border: 1.5px solid var(--ink); }
+  .btn.small { width: auto; min-height: 2.75rem; }
+
+  .board { display: grid; gap: 1rem; padding: 1rem; align-items: start; }
+  @media (min-width: 52rem) { .board { grid-template-columns: repeat(3, 1fr); } }
+  .col h2 { margin: 0 0 .5rem; font-family: var(--display); font-weight: 400; font-size: 1.25rem; display: flex; justify-content: space-between; }
+  .col h2 span { font-family: var(--body); font-weight: 600; font-size: 1rem; }
+  .empty { margin: 0; padding: 1rem; border: 1.5px dashed var(--celadon-line); border-radius: 12px; color: var(--ink-soft); }
+
+  .card { background: var(--paper); border: 1.5px solid var(--ink); border-radius: 12px; margin-bottom: .75rem; overflow: hidden; }
+  .card[data-status="ใหม่"] { border-color: var(--chili); border-width: 3px; }
+  .card[data-status="เสร็จแล้ว"], .card[data-status="ยกเลิก"] { border-color: var(--celadon-line); color: var(--ink-soft); }
+  .card-head { display: flex; align-items: center; gap: .75rem; padding: .625rem .75rem; border-bottom: 1px solid var(--celadon-line); }
+  .card-table { background: var(--sesame); color: var(--ink); border-radius: 6px; padding: .125rem .625rem; font-family: var(--display); font-size: 1.5rem; line-height: 1.3; }
+  .card-meta { flex: 1; line-height: 1.3; }
+  .card-meta small { display: block; color: var(--ink-soft); }
+  .card ul { list-style: none; margin: 0; padding: .5rem .75rem; }
+  .card li { display: flex; justify-content: space-between; gap: .75rem; padding: .125rem 0; font-size: 1.125rem; }
+  .card li b { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tags { padding: 0 .75rem .5rem; }
+  .tags p { margin: .25rem 0 0; }
+  .spice { display: inline-block; background: var(--chili); color: #fff; border-radius: 6px; padding: 0 .5rem; font-weight: 600; }
+  .note { background: #FFF6D6; border-radius: 6px; padding: .25rem .5rem; }
+  .contact { margin: 0; padding: .5rem .75rem 0; }
+  .contact a { color: inherit; font-weight: 600; font-size: 1.125rem; font-variant-numeric: tabular-nums; text-underline-offset: 3px; display: inline-block; padding: .25rem 0; }
+  .card-photo { display: block; width: calc(100% - 1.5rem); margin: .5rem .75rem; padding: 0; border: 1.5px solid var(--ink); border-radius: 10px; overflow: hidden; background: var(--celadon); }
+  .card-photo img { display: block; width: 100%; height: 9rem; object-fit: cover; }
+  .photo-wait { margin: .5rem .75rem; padding: .75rem; border: 1.5px dashed var(--celadon-line); border-radius: 10px; color: var(--ink-soft); }
+  .photo-more { padding: .5rem .75rem 0; }
+  dialog { border: 0; border-radius: 16px; padding: .75rem; max-width: min(95vw, 60rem); background: var(--paper); color: var(--ink); }
+  dialog::backdrop { background: rgb(21 37 29 / .75); }
+  dialog img { display: block; max-width: 100%; max-height: 78vh; margin: 0 auto .75rem; border-radius: 10px; }
+  .card-foot { display: flex; gap: .5rem; padding: .625rem .75rem; border-top: 1px solid var(--celadon-line); align-items: center; }
+  .card-foot .sum { flex: 1; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.3; }
+  .card-foot .sum small { display: block; font-weight: 400; color: var(--chili-deep); }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <h1>ออเดอร์หลังร้าน</h1>
+  <p id="status" role="status"></p>
+</header>
+
+<section class="gate" id="gate">
+  <label for="key">รหัสพนักงาน</label>
+  <input id="key" inputmode="numeric" autocomplete="off">
+  <p class="msg" id="gateMsg" role="alert"></p>
+  <button class="btn" id="startBtn" type="button">เริ่มรับออเดอร์</button>
+</section>
+
+<main class="board" id="board" hidden>
+  <section class="col"><h2>ออเดอร์ใหม่ <span id="n-new"></span></h2><div id="c-new"></div></section>
+  <section class="col"><h2>กำลังทำ <span id="n-doing"></span></h2><div id="c-doing"></div></section>
+  <section class="col"><h2>เสร็จแล้ว <span id="n-done"></span></h2><div id="c-done"></div></section>
+</main>
+
+<dialog id="viewer" aria-label="รูปจากลูกค้า">
+  <img id="viewerImg" alt="รูปที่ลูกค้าถ่าย">
+  <button class="btn quiet" type="button" id="viewerClose">ปิดรูป</button>
+</dialog>
+
+<script src="config.js"></script>
+<script>
+(() => {
+  'use strict';
+  const CFG = Object.assign({ API_URL: '' }, window.SHOP_CONFIG || {});
+  const POLL_MS = 10000;      // ถามหาออเดอร์ใหม่ทุก 10 วินาที
+  const KEY_STORE = 'mala-staff-key';
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const money = n => '฿' + Number(n).toLocaleString('th-TH', { maximumFractionDigits: 2 });
+
+  let key = '';
+  let orders = [];
+  let known = null;           // เลขออเดอร์ที่เคยเห็นแล้ว ใช้ตัดสินว่าควรส่งเสียงเตือนไหม
+  let timer = null;
+  let busy = false;
+  let audio = null;
+  const photos = new Map();   // เลขออเดอร์ -> รูป (โหลดครั้งเดียวแล้วจำไว้)
+  const photoFailed = new Set();
+  let photoBusy = false;
+
+  // ออเดอร์ตัวอย่าง ใช้ตอนยังไม่ได้ใส่ API_URL
+  const demoPhoto = 'data:image/svg+xml,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="420"><rect width="640" height="420" fill="#C5D6CA"/>' +
+    '<rect x="150" y="190" width="340" height="24" rx="6" fill="#4B5E53"/><rect x="180" y="214" width="16" height="130" fill="#4B5E53"/>' +
+    '<rect x="444" y="214" width="16" height="130" fill="#4B5E53"/><circle cx="320" cy="160" r="34" fill="#B5121B"/>' +
+    '<text x="320" y="390" text-anchor="middle" font-family="sans-serif" font-size="26" fill="#15251D">รูปตัวอย่าง</text></svg>');
+  const demo = [
+    { id: 'demo-001', queue: '001', time: '12:01', table: '4', customer: 'คุณเอ', phone: '0812345678', hasPhoto: true, spice: 'เผ็ดกลาง', note: 'ไม่ใส่ผักชี', status: 'กำลังทำ', total: 120, discount: 12,
+      lines: [{ name: 'หมูสไลซ์', qty: 5 }, { name: 'เห็ดเข็มทอง', qty: 3 }, { name: 'ลูกชิ้นปลา', qty: 3 }] },
+    { id: 'demo-002', queue: '002', time: '12:06', table: 'กลับบ้าน', customer: '', phone: '0898765432', hasPhoto: true, spice: 'เผ็ดมาก', note: '', status: 'ใหม่', total: 54, discount: 0,
+      lines: [{ name: 'เนื้อวัวสไลซ์', qty: 2 }, { name: 'ปลาหมึกสด', qty: 2 }] },
+  ];
+
+  async function api(body) {
+    if (!CFG.API_URL) {
+      if (body.action === 'status') { const o = demo.find(x => x.id === body.orderId); if (o) o.status = body.status; return { ok: true }; }
+      if (body.action === 'photo') return { ok: true, photo: demoPhoto };
+      return { ok: true, orders: JSON.parse(JSON.stringify(demo)) };
+    }
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 25000);
+    try {
+      const res = await fetch(CFG.API_URL, {
+        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(Object.assign({ key }, body)), signal: ctrl.signal,
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return await res.json();
+    } finally { clearTimeout(t); }
+  }
+
+  function beep() {
+    if (!audio) return;
+    try {
+      [0, 0.25].forEach(at => {
+        const o = audio.createOscillator(), g = audio.createGain();
+        o.frequency.value = 880; o.connect(g); g.connect(audio.destination);
+        g.gain.setValueAtTime(0.3, audio.currentTime + at);
+        g.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + at + 0.2);
+        o.start(audio.currentTime + at); o.stop(audio.currentTime + at + 0.2);
+      });
+    } catch (e) {}
+  }
+
+  const showPhone = p => /^\d{10}$/.test(p) ? p.slice(0, 3) + '-' + p.slice(3, 6) + '-' + p.slice(6) : p;
+
+  function photoHTML(o) {
+    if (!o.hasPhoto) return '';
+    const id = esc(o.id);
+    const src = photos.get(o.id);
+    if (src) return `<button class="card-photo" type="button" data-photo="${id}" aria-label="ขยายรูปของคิว ${esc(o.queue)}"><img src="${esc(src)}" alt="รูปที่ลูกค้าถ่าย"></button>`;
+    const active = o.status === 'ใหม่' || o.status === 'กำลังทำ';
+    if (active && !photoFailed.has(o.id)) return '<p class="photo-wait">กำลังโหลดรูป…</p>';
+    return `<div class="photo-more"><button class="btn quiet small" type="button" data-photo="${id}">ดูรูป</button></div>`;
+  }
+
+  async function loadPhoto(id) {
+    if (photos.has(id)) return photos.get(id);
+    try {
+      const data = await api({ action: 'photo', orderId: id });
+      if (data.ok && typeof data.photo === 'string' && data.photo.startsWith('data:image/')) {
+        photos.set(id, data.photo); photoFailed.delete(id);
+        return data.photo;
+      }
+    } catch (e) {}
+    photoFailed.add(id);
+    return '';
+  }
+  // โหลดรูปของออเดอร์ที่ยังไม่เสร็จทีละรูป ออเดอร์ที่เสร็จแล้วค่อยโหลดเมื่อกด "ดูรูป"
+  async function loadActivePhotos() {
+    if (photoBusy) return;
+    photoBusy = true;
+    try {
+      for (;;) {
+        const o = orders.find(x => x.hasPhoto && (x.status === 'ใหม่' || x.status === 'กำลังทำ') && !photos.has(x.id) && !photoFailed.has(x.id));
+        if (!o) break;
+        await loadPhoto(o.id);
+        render();
+      }
+    } finally { photoBusy = false; }
+  }
+
+  function card(o) {
+    const isNum = /^\d+$/.test(o.table);
+    const next = o.status === 'ใหม่' ? ['กำลังทำ', 'เริ่มทำ'] : o.status === 'กำลังทำ' ? ['เสร็จแล้ว', 'ทำเสร็จแล้ว'] : null;
+    return `<article class="card" data-status="${esc(o.status)}">
+      <div class="card-head">
+        <span class="card-table">${isNum ? 'โต๊ะ ' : ''}${esc(o.table)}</span>
+        <div class="card-meta">คิว ${esc(o.queue)}<small>${esc(o.time)}${o.customer ? ' ' + esc(o.customer) : ''}${o.status === 'ยกเลิก' ? ' (ยกเลิก)' : ''}</small></div>
+      </div>
+      ${o.phone ? `<p class="contact"><a href="tel:${esc(o.phone)}">โทร ${esc(showPhone(o.phone))}</a></p>` : ''}
+      ${photoHTML(o)}
+      <ul>${o.lines.map(l => `<li><span>${esc(l.name)}</span><b>× ${esc(l.qty)}</b></li>`).join('')}</ul>
+      ${o.spice || o.note ? `<div class="tags">${o.spice ? `<p><span class="spice">${esc(o.spice)}</span></p>` : ''}${o.note ? `<p class="note">${esc(o.note)}</p>` : ''}</div>` : ''}
+      <div class="card-foot">
+        <span class="sum">${money(o.total)}${o.discount > 0 ? `<small>หักโปรแล้ว ${money(o.discount)}</small>` : ''}</span>
+        ${o.status === 'ใหม่' ? `<button class="btn quiet small" type="button" data-id="${esc(o.id)}" data-to="ยกเลิก">ยกเลิก</button>` : ''}
+        ${next ? `<button class="btn small" type="button" data-id="${esc(o.id)}" data-to="${next[0]}">${next[1]}</button>` : ''}
+      </div>
+    </article>`;
+  }
+
+  function render() {
+    const groups = {
+      new: orders.filter(o => o.status === 'ใหม่'),
+      doing: orders.filter(o => o.status === 'กำลังทำ'),
+      done: orders.filter(o => o.status === 'เสร็จแล้ว' || o.status === 'ยกเลิก').reverse().slice(0, 15),
+    };
+    const emptyText = { new: 'ยังไม่มีออเดอร์ใหม่', doing: 'ไม่มีออเดอร์ที่กำลังทำ', done: 'ยังไม่มีออเดอร์ที่เสร็จ' };
+    Object.keys(groups).forEach(k => {
+      $('n-' + k).textContent = k === 'done' ? '' : groups[k].length || '';
+      $('c-' + k).innerHTML = groups[k].length ? groups[k].map(card).join('') : `<p class="empty">${emptyText[k]}</p>`;
+    });
+    const n = groups.new.length;
+    document.title = (n ? '(' + n + ') ' : '') + 'ออเดอร์หลังร้าน';
+  }
+
+  function setStatus(text, bad) {
+    $('status').textContent = text;
+    $('status').classList.toggle('bad', !!bad);
+  }
+
+  async function refresh() {
+    if (busy) return;
+    busy = true;
+    try {
+      const data = await api({ action: 'orders' });
+      if (!data.ok) {
+        if (data.code === 'KEY') { stop(); showGate(data.error); return; }
+        throw new Error(data.error);
+      }
+      orders = data.orders || [];
+      const ids = new Set(orders.map(o => o.id));
+      if (known && orders.some(o => o.status === 'ใหม่' && !known.has(o.id))) beep();
+      known = ids;
+      render();
+      loadActivePhotos();
+      $('gate').hidden = true;
+      $('board').hidden = false;
+      try { localStorage.setItem(KEY_STORE, key); } catch (e) {}
+      const now = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      setStatus((CFG.API_URL ? '' : 'โหมดทดลอง ') + 'อัปเดตล่าสุด ' + now);
+    } catch (e) {
+      setStatus('เชื่อมต่อไม่ได้ กำลังลองใหม่', true);
+    } finally { busy = false; }
+  }
+
+  function startPolling() {
+    stop();
+    refresh();
+    timer = setInterval(() => { if (!document.hidden) refresh(); }, POLL_MS);
+  }
+  function stop() { if (timer) clearInterval(timer); timer = null; }
+  function showGate(msg) {
+    $('board').hidden = true; $('gate').hidden = false;
+    $('gateMsg').textContent = msg || '';
+    setStatus('');
+  }
+
+  $('startBtn').addEventListener('click', () => {
+    key = $('key').value.trim();
+    if (CFG.API_URL && !key) { $('gateMsg').textContent = 'ใส่รหัสพนักงานก่อน'; return; }
+    // เบราว์เซอร์ยอมให้เล่นเสียงได้หลังจากมีการกดปุ่มเท่านั้น
+    try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); audio.resume(); } catch (e) {}
+    $('gateMsg').textContent = '';
+    setStatus('กำลังเชื่อมต่อ…');
+    known = null;
+    startPolling();
+  });
+  $('key').addEventListener('keydown', e => { if (e.key === 'Enter') $('startBtn').click(); });
+
+  $('board').addEventListener('click', async e => {
+    const pb = e.target.closest('button[data-photo]');
+    if (pb) {
+      const src = await loadPhoto(pb.dataset.photo);
+      if (!src) { setStatus('โหลดรูปไม่ได้ ลองกดอีกครั้ง', true); render(); return; }
+      $('viewerImg').src = src;
+      if (!$('viewer').open) $('viewer').showModal();
+      render();
+      return;
+    }
+    const b = e.target.closest('button[data-to]');
+    if (!b) return;
+    const to = b.dataset.to, id = b.dataset.id;
+    if (to === 'ยกเลิก' && !confirm('ยกเลิกออเดอร์นี้ใช่ไหม')) return;
+    const o = orders.find(x => x.id === id);
+    if (!o) return;
+    const before = o.status;
+    o.status = to; render();                 // เปลี่ยนบนจอทันที แล้วค่อยบันทึก
+    try {
+      const data = await api({ action: 'status', orderId: id, status: to });
+      if (!data.ok) throw new Error(data.error);
+    } catch (err) {
+      o.status = before; render();
+      setStatus('บันทึกสถานะไม่สำเร็จ ลองกดอีกครั้ง', true);
+    }
+  });
+
+  $('viewerClose').addEventListener('click', () => $('viewer').close());
+  $('viewer').addEventListener('click', e => { if (e.target === $('viewer')) $('viewer').close(); });
+
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && timer) refresh(); });
+
+  try { $('key').value = localStorage.getItem(KEY_STORE) || ''; } catch (e) {}
+  if (!CFG.API_URL) $('gateMsg').textContent = 'โหมดทดลอง: กดเริ่มได้เลย ไม่ต้องใส่รหัส';
+})();
+</script>
+</body>
+</html>

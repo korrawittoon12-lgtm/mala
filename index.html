@@ -1,0 +1,860 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>เมนู</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,400;0,500;0,600;1,700;1,800&family=Pattaya&family=Sriracha&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #F6F1E7;
+    --paper: #FFFDF8;
+    --line: #E4DACA;
+    --ink: #141210;
+    --ink-soft: #5E564B;
+    --red: #B01116;
+    --red-deep: #8A0B10;
+    --display: 'Pattaya', 'Kanit', 'Thonburi', system-ui, sans-serif;
+    --body: 'Kanit', 'Noto Sans Thai', 'Thonburi', system-ui, sans-serif;
+    --note: 'Sriracha', 'Kanit', 'Thonburi', cursive;
+    /* แถบสีแดงขอบขรุขระแบบรอยพู่กัน */
+    --brush: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 60' preserveAspectRatio='none'%3E%3Cpath fill='%23B01116' d='M9 15 5 9 22 10 18 5 62 6 140 3 232 6 284 2 297 9 289 15 299 22 290 30 298 39 288 45 296 53 280 52 284 58 238 55 150 57 70 55 22 58 26 52 6 55 12 47 2 41 11 34 3 26 12 21Z'/%3E%3C/svg%3E");
+    --tabs-h: 3.5rem;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--cream);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 1rem;
+    line-height: 1.55;
+    padding-bottom: calc(8.5rem + env(safe-area-inset-bottom));
+  }
+  button, input, textarea { font: inherit; color: inherit; }
+  button { touch-action: manipulation; cursor: pointer; }
+  :focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+  .wrap { max-width: 35rem; margin: 0 auto; }
+  .nw { white-space: nowrap; }
+  .brush { background: var(--brush) center / 100% 100% no-repeat; color: #fff; }
+
+  /* หัวร้าน: จัดวางตามโปสเตอร์ของร้าน */
+  .hero { text-align: center; overflow: hidden; }
+  .hero .wrap { padding: 1rem 1rem 1.25rem; }
+  .hero-top { display: flex; justify-content: space-between; align-items: flex-start; min-height: 2.75rem; }
+  .motto {
+    margin: 0; text-align: left; text-transform: uppercase;
+    font-size: .6875rem; letter-spacing: .3em; line-height: 1.8;
+    padding-bottom: .375rem; border-bottom: 2px solid var(--red);
+  }
+  .table-note {
+    margin: 0; font-family: var(--note); font-size: 1.375rem; line-height: 1.3;
+    transform: rotate(-5deg); padding: 0 .25rem .125rem; border-bottom: 3px solid var(--red);
+  }
+  .hero h1 {
+    position: relative; display: table; margin: .5em auto 0;
+    font-family: var(--display); font-weight: 400;
+    font-size: clamp(3.25rem, 19vw, 5.5rem); line-height: 1.3;
+    transform: rotate(-4deg);
+    /* ตำแหน่งลูกไฟ ปรับได้ 3 ค่านี้ */
+    --flame-x: 22.5%;     /* ซ้าย-ขวา: 0% คือขอบซ้ายของชื่อร้าน ค่านี้คือเหนือตัว "ม" และไม่บังไม้เอก */
+    --flame-drop: .33em;  /* สูง-ต่ำ: ยิ่งมากยิ่งลงมาทับหัวตัวอักษร */
+    --flame-size: .52em;  /* ขนาด */
+  }
+  .flame {
+    position: absolute; left: var(--flame-x); top: var(--flame-drop);
+    width: var(--flame-size); height: calc(var(--flame-size) * 1.25);
+    transform: translate(-50%, -100%) rotate(4deg);
+  }
+  .price-banner {
+    display: inline-block; margin: -.25rem 0 0; padding: .375rem 2.25rem .5rem;
+    font-style: italic; font-weight: 800; font-size: 1.625rem; line-height: 1.3;
+    transform: rotate(-3deg); white-space: nowrap;
+  }
+  .price-banner b { font-size: 1.7em; line-height: 1; vertical-align: -.08em; padding: 0 .1em; }
+  .deal {
+    margin: .625rem 0 0; display: flex; justify-content: center; align-items: center; gap: .625rem;
+    font-style: italic; font-weight: 800; font-size: 1.75rem; line-height: 1.3;
+  }
+  .deal em { color: var(--red); font-style: inherit; }
+  .deal svg { width: 1.5rem; height: 1.5rem; flex: none; }
+  .deal svg:last-child { transform: scaleX(-1); }
+  .howto { margin: .5rem 0 0; font-size: .9375rem; color: var(--ink-soft); }
+  .demo-note { margin: 0; padding: .5rem 1rem; background: var(--ink); color: var(--cream); font-size: .875rem; text-align: center; }
+
+  /* แถบหมวด */
+  .tabs {
+    position: sticky; top: 0; z-index: 5; height: var(--tabs-h);
+    background: var(--cream); border-bottom: 1px solid var(--line);
+  }
+  .tabs .wrap {
+    display: flex; gap: .5rem; align-items: center; height: 100%;
+    padding: 0 1rem; overflow-x: auto; scrollbar-width: none;
+  }
+  .tabs .wrap::-webkit-scrollbar { display: none; }
+  .tab {
+    flex: none; min-height: 2.5rem; padding: 0 .875rem; white-space: nowrap;
+    background: transparent; border: 1.5px solid var(--ink); border-radius: 999px;
+  }
+  .tab[aria-current="true"] { background: var(--red); border-color: var(--red); color: #fff; font-weight: 500; }
+
+  /* รายการเมนู */
+  .cat { scroll-margin-top: var(--tabs-h); }
+  .cat h2 { margin: 0; padding: 1.25rem .75rem .625rem; line-height: 1.3; }
+  .cat h2 span {
+    display: inline-block; padding: .25rem 1.5rem .375rem;
+    font-style: italic; font-weight: 700; font-size: 1.25rem; transform: rotate(-2deg);
+  }
+  .items { list-style: none; margin: 0; padding: 0; background: var(--paper); border-block: 1px solid var(--line); }
+  .item {
+    display: grid; grid-template-columns: 1fr auto; align-items: center; gap: .75rem;
+    padding: .625rem 1rem; min-height: 4rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .item:last-child { border-bottom: 0; }
+  .item.in-cart { box-shadow: inset 5px 0 0 var(--red); }
+  .item.is-out { color: var(--ink-soft); }
+  .item-name { display: block; font-weight: 500; font-size: 1.0625rem; }
+  .item-price { display: block; font-size: .9375rem; color: var(--red-deep); font-weight: 500; }
+  .item.is-out .item-price { color: inherit; }
+  .item-price small { font-size: .8125rem; font-weight: 400; color: var(--ink-soft); margin-left: .375rem; }
+  .stepper { display: flex; align-items: center; gap: .25rem; }
+  .round {
+    width: 2.75rem; height: 2.75rem; border-radius: 50%; padding: 0;
+    font-size: 1.5rem; line-height: 1; display: grid; place-items: center;
+  }
+  .round.plus { background: var(--red); color: #fff; border: 0; }
+  .round.plus:active { background: var(--red-deep); }
+  .round.minus { background: var(--paper); border: 1.5px solid var(--ink); }
+  .qty { min-width: 2.25rem; text-align: center; font-weight: 600; font-size: 1.125rem; font-variant-numeric: tabular-nums; }
+  .soldout { padding: .25rem .75rem; border: 1.5px dashed var(--ink-soft); border-radius: 999px; font-size: .9375rem; }
+
+  .state { padding: 3rem 1.5rem; text-align: center; }
+  .state p { margin: 0 0 1rem; }
+
+  /* ปุ่มหลัก */
+  .btn {
+    min-height: 3rem; padding: 0 1.25rem; border: 0; border-radius: 999px;
+    background: var(--paper); color: var(--ink); font-weight: 600; white-space: nowrap;
+  }
+  .btn:disabled { opacity: .6; cursor: default; }
+  .btn.red { background: var(--red); color: #fff; width: 100%; min-height: 3.5rem; font-size: 1.125rem; }
+  .btn.dark { background: var(--ink); color: var(--cream); }
+  .linklike { background: none; border: 0; padding: .75rem .5rem; text-decoration: underline; text-underline-offset: 3px; }
+
+  /* แถบสรุปด้านล่าง */
+  .orderbar {
+    position: fixed; inset: auto 0 0 0; z-index: 10;
+    background: var(--red); color: #fff;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .nudge { margin: 0; padding: .25rem 1rem; background: var(--ink); color: var(--cream); text-align: center; font-size: .9375rem; }
+  .orderbar .wrap { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .625rem 1rem .75rem; }
+  .orderbar .sum { line-height: 1.25; }
+  .orderbar .sum small { display: block; font-size: .875rem; }
+  .orderbar .sum b { font-size: 1.625rem; font-weight: 800; font-style: italic; font-variant-numeric: tabular-nums; }
+  .orderbar :focus-visible { outline-color: #fff; }
+
+  /* แผ่นสรุปออเดอร์ */
+  dialog {
+    width: 100%; max-width: 35rem; max-height: 92vh; max-height: 92dvh;
+    margin: auto auto 0; padding: 0; border: 0; border-radius: 20px 20px 0 0;
+    background: var(--paper); color: var(--ink); overflow: hidden;
+  }
+  dialog[open] { display: flex; flex-direction: column; }
+  dialog::backdrop { background: rgb(20 18 16 / .65); }
+  .sheet-head { display: flex; align-items: center; justify-content: space-between; padding: .75rem 1rem 0; }
+  .sheet-head h2 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 1.75rem; line-height: 1.4; }
+  .sheet-body { overflow-y: auto; padding: 0 1rem 1rem; -webkit-overflow-scrolling: touch; }
+  .lines { list-style: none; margin: 0; padding: 0; }
+  .line { display: grid; grid-template-columns: 1fr auto; gap: .5rem; align-items: center; padding: .625rem 0; border-bottom: 1px solid var(--line); }
+  .line-name { display: block; font-weight: 500; }
+  .line-calc { display: block; font-size: .9375rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .discount { display: flex; justify-content: space-between; gap: 1rem; padding: .75rem 0 0; color: var(--red-deep); font-weight: 500; }
+  .discount b { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .total { display: flex; justify-content: space-between; align-items: baseline; padding: .625rem 0 .875rem; font-weight: 600; }
+  .total b { font-size: 1.625rem; font-weight: 800; font-style: italic; font-variant-numeric: tabular-nums; }
+  fieldset { border: 0; margin: 0; padding: .5rem 0 0; min-width: 0; }
+  legend, .field > label, .field > .label { padding: 0; font-weight: 600; margin-bottom: .375rem; display: block; }
+  .spice { display: grid; grid-template-columns: repeat(2, 1fr); gap: .5rem; }
+  .spice label { position: relative; }
+  .spice input { position: absolute; opacity: 0; inset: 0; margin: 0; }
+  .spice span {
+    display: grid; place-items: center; min-height: 3rem;
+    border: 1.5px solid var(--ink); border-radius: 12px; background: var(--paper);
+  }
+  .spice input:checked + span { background: var(--red); border-color: var(--red); color: #fff; font-weight: 600; }
+  .spice input:focus-visible + span { outline: 3px solid var(--ink); outline-offset: 2px; }
+  .field { margin-top: 1rem; }
+  .field input, .field textarea {
+    width: 100%; padding: .75rem; border: 1.5px solid var(--ink); border-radius: 12px; background: #fff;
+    font-size: 1rem;
+  }
+  .field textarea { resize: vertical; min-height: 4.5rem; }
+  .field .visually-hidden {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; border: 0;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+  }
+  .photo-box { display: flex; align-items: center; gap: .75rem; }
+  .photo-box img { width: 5.5rem; height: 5.5rem; object-fit: cover; border-radius: 12px; border: 1.5px solid var(--ink); flex: none; }
+  .photo-btn { display: inline-grid; place-items: center; cursor: pointer; flex: 1; background: var(--ink); color: var(--cream); border-radius: 12px; }
+  .photo-btn.retake { background: var(--paper); color: var(--ink); border: 1.5px solid var(--ink); flex: none; }
+  .photo-btn.is-busy { opacity: .6; pointer-events: none; }
+  #photoInput:focus-visible + .photo-btn { outline: 3px solid var(--ink); outline-offset: 2px; }
+  .sheet-foot { padding: .75rem 1rem calc(.75rem + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); }
+  .error { margin: 0 0 .75rem; padding: .625rem .75rem; border-radius: 10px; background: #FBE3E4; color: var(--red-deep); font-weight: 500; }
+
+  .done { text-align: center; padding: 1.5rem 1.25rem 1rem; }
+  .done h2 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 2rem; line-height: 1.4; }
+  .done .queue { margin: .75rem auto 1rem; width: fit-content; padding: .75rem 2.5rem .625rem; transform: rotate(-3deg); }
+  .done .queue small { display: block; font-style: italic; font-weight: 700; }
+  .done .queue b { display: block; font-style: italic; font-weight: 800; font-size: 3.5rem; line-height: 1.1; }
+  .done p { margin: .25rem 0; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html { scroll-behavior: smooth; }
+    .round, .tab, .spice span { transition: background-color .12s; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="hero-top">
+      <p class="motto">Mala street food<br>good mood</p>
+      <p class="table-note" id="plaque" hidden></p>
+    </div>
+    <h1><svg class="flame" viewBox="0 0 64 80" aria-hidden="true"><path fill="#B01116" d="M33 3C37 18 53 27 53 49 53 65 44 77 32 77 20 77 11 65 11 49 11 39 17 32 20 23 22 30 24 34 27 36 29 26 29 14 33 3Z"/><path fill="#F28C1B" d="M32 29C35 40 45 45 45 57 45 67 39 73 32 73 25 73 19 67 19 57 19 51 22 46 24 42 25 45 27 48 29 49 30 42 30 36 32 29Z"/><path fill="#FFFDF8" d="M32 50C34 55 38 58 38 64 38 69 35 72 32 72 29 72 26 69 26 64 26 59 30 56 32 50Z"/></svg><span id="shopName"></span></h1>
+    <p class="brush price-banner" id="priceBanner" hidden></p>
+    <p class="deal" id="dealLine" hidden><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M26 4 15 9M24 14H8M26 24 15 19" fill="none" stroke="#B01116" stroke-width="3.5" stroke-linecap="round"/></svg><span id="dealText"></span><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M26 4 15 9M24 14H8M26 24 15 19" fill="none" stroke="#B01116" stroke-width="3.5" stroke-linecap="round"/></svg></p>
+    <p class="howto"><span class="nw">เลือกของที่อยากกิน</span> <span class="nw">ใส่จำนวน</span> <span class="nw">แล้วกดส่งออเดอร์</span></p>
+  </div>
+</header>
+<p class="demo-note" id="demoNote" hidden>โหมดทดลอง: ออเดอร์ยังไม่ถูกส่งไปที่ร้าน</p>
+
+<nav class="tabs" aria-label="หมวดเมนู"><div class="wrap" id="tabs"></div></nav>
+
+<main class="wrap" id="menu">
+  <div class="state"><p>กำลังโหลดเมนู…</p></div>
+</main>
+
+<div class="orderbar" id="orderBar" hidden>
+  <p class="nudge" id="nudge" hidden></p>
+  <div class="wrap">
+    <div class="sum"><small id="barCount"></small><b id="barTotal"></b></div>
+    <button class="btn" id="openSheet" type="button">ดูรายการที่สั่ง</button>
+  </div>
+</div>
+
+<dialog id="sheet" aria-labelledby="sheetTitle">
+  <div id="cartView" style="display:contents">
+    <div class="sheet-head">
+      <h2 id="sheetTitle">รายการที่สั่ง</h2>
+      <button class="linklike" type="button" data-close>เลือกเพิ่ม</button>
+    </div>
+    <div class="sheet-body">
+      <ul class="lines" id="lines"></ul>
+      <div class="discount" id="discountRow" hidden><span id="discountLabel"></span><b id="discountAmount"></b></div>
+      <div class="total"><span>ยอดที่ต้องจ่าย</span><b id="sheetTotal"></b></div>
+
+      <fieldset id="spiceField">
+        <legend>ระดับความเผ็ด</legend>
+        <div class="spice" id="spice"></div>
+      </fieldset>
+
+      <div class="field" id="tableField">
+        <label for="tableInput">เลขโต๊ะ</label>
+        <input id="tableInput" inputmode="numeric" maxlength="20" autocomplete="off" placeholder="ดูเลขที่ป้ายบนโต๊ะ">
+      </div>
+
+      <div class="field">
+        <label for="phone">เบอร์โทร</label>
+        <input id="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="15" placeholder="08x-xxx-xxxx">
+      </div>
+
+      <div class="field">
+        <span class="label" id="photoLabel">รูปโต๊ะหรือบริเวณรอบข้าง</span>
+        <div class="photo-box">
+          <img id="photoPreview" alt="รูปที่ถ่ายไว้" hidden>
+          <input id="photoInput" class="visually-hidden" type="file" accept="image/*" capture="environment" aria-labelledby="photoLabel">
+          <label class="btn photo-btn" for="photoInput" id="photoBtn">ถ่ายรูป</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="note">บอกร้านเพิ่มเติม (ไม่ใส่ก็ได้)</label>
+        <textarea id="note" maxlength="200" placeholder="เช่น ไม่ใส่ผักชี แพ้ถั่ว"></textarea>
+      </div>
+    </div>
+    <div class="sheet-foot">
+      <p class="error" id="error" role="alert" hidden></p>
+      <button class="btn red" id="send" type="button">ส่งออเดอร์</button>
+    </div>
+  </div>
+
+  <div id="doneView" hidden>
+    <div class="done">
+      <h2>ส่งออเดอร์แล้ว</h2>
+      <div class="queue brush"><small>คิวที่</small><b id="doneQueue"></b></div>
+      <p id="doneTable"></p>
+      <p>ยอดที่ต้องจ่าย <b id="doneTotal"></b></p>
+    </div>
+    <div class="sheet-foot">
+      <button class="btn red" type="button" data-close>สั่งเพิ่ม</button>
+    </div>
+  </div>
+</dialog>
+
+<script src="config.js"></script>
+<script>
+(() => {
+  'use strict';
+
+  // ---------- ตั้งค่า ----------
+  const CFG = Object.assign({
+    SHOP_NAME: 'หม่าล่าซัง',
+    LIFF_ID: '',
+    API_URL: '',
+    NO_SPICE_CATEGORIES: ['เครื่องดื่ม'],
+  }, window.SHOP_CONFIG || {});
+
+  const SPICE_LEVELS = ['ไม่เผ็ด', 'เผ็ดน้อย', 'เผ็ดกลาง', 'เผ็ดมาก'];
+  const MAX_QTY = 50;
+  const CART_KEY = 'mala-cart-v1';
+  const CART_MAX_AGE = 6 * 60 * 60 * 1000; // ลืมตะกร้าที่ค้างเกิน 6 ชั่วโมง
+  const PHOTO_MAX_SIDE = 1280;             // ย่อรูปให้ด้านยาวไม่เกินเท่านี้ก่อนส่ง จะได้ส่งเร็วและไม่เปลืองเน็ตลูกค้า
+  const PHOTO_QUALITY = 0.7;
+
+  // เมนูตัวอย่าง ใช้เฉพาะตอนยังไม่ได้ใส่ API_URL (เมนูจริงแก้ใน Google Sheet)
+  // แต่ละแถว: หมวด, ชื่อ, ราคา, หน่วย, พร้อมขาย, ร่วมโปร
+  const DEMO_MENU = [
+    ['เนื้อสัตว์', 'หมูสไลซ์', 12, 'ไม้'], ['เนื้อสัตว์', 'สันคอหมู', 12, 'ไม้'],
+    ['เนื้อสัตว์', 'เนื้อวัวสไลซ์', 12, 'ไม้'], ['เนื้อสัตว์', 'ไก่หมัก', 12, 'ไม้'],
+    ['หมึกย่าง', 'ปลาหมึกสด', 15, 'ไม้'],
+    ['ลูกชิ้นและเต้าหู้', 'ลูกชิ้นหมู', 12, 'ไม้'], ['ลูกชิ้นและเต้าหู้', 'ลูกชิ้นปลา', 12, 'ไม้'],
+    ['ลูกชิ้นและเต้าหู้', 'ไส้กรอกชีส', 12, 'ไม้'], ['ลูกชิ้นและเต้าหู้', 'ปูอัด', 12, 'ไม้'],
+    ['ลูกชิ้นและเต้าหู้', 'เต้าหู้ปลา', 12, 'ไม้'], ['ลูกชิ้นและเต้าหู้', 'ฟองเต้าหู้', 12, 'ไม้'],
+    ['ผักและเห็ด', 'ผักบุ้ง', 12, 'ไม้'], ['ผักและเห็ด', 'กะหล่ำปลี', 12, 'ไม้'],
+    ['ผักและเห็ด', 'เห็ดเข็มทอง', 12, 'ไม้'], ['ผักและเห็ด', 'เห็ดออรินจิ', 12, 'ไม้', false],
+    ['ผักและเห็ด', 'ข้าวโพดอ่อน', 12, 'ไม้'], ['ผักและเห็ด', 'บรอกโคลี', 12, 'ไม้'],
+  ].map(r => ({ cat: r[0], name: r[1], price: r[2], unit: r[3], available: r[4] !== false, promo: r[5] !== false }));
+  const DEMO_PROMO = { buy: 10, free: 1 };
+
+  // ---------- สถานะของหน้า ----------
+  const state = {
+    menu: [],          // [{cat, name, price, unit, available, promo}]
+    promo: { buy: 0, free: 0 },   // ซื้อครบ buy แถม free (0 = ไม่มีโปร)
+    cart: {},          // { ชื่อเมนู: จำนวน }
+    spice: '',
+    note: '',
+    phone: '',
+    photo: '',         // รูปที่ย่อแล้ว เก็บไว้ในหน่วยความจำของหน้านี้เท่านั้น
+    table: '',
+    tableFromQr: false,
+    customer: '',
+    clientId: '',      // รหัสกันส่งซ้ำ เปลี่ยนทุกครั้งที่ตะกร้าเปลี่ยน
+    sending: false,
+  };
+
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const money = n => '฿' + Number(n).toLocaleString('th-TH', { maximumFractionDigits: 2 });
+  const round2 = n => Math.round(n * 100) / 100;
+
+  // ---------- เลขโต๊ะจาก QR ----------
+  // QR แต่ละโต๊ะคือลิงก์ที่ลงท้ายด้วย ?table=เลขโต๊ะ
+  function cleanTable(t) {
+    t = String(t == null ? '' : t).trim().slice(0, 20);
+    return t.toLowerCase() === 'takeaway' ? 'กลับบ้าน' : t;
+  }
+  function readTableParam() {
+    const p = new URLSearchParams(location.search);
+    let t = p.get('table');
+    const ls = p.get('liff.state'); // LINE ส่งข้อมูลท้ายลิงก์มาในช่องนี้ก่อน liff.init()
+    if (!t && ls && ls.includes('?')) {
+      t = new URLSearchParams(ls.slice(ls.indexOf('?') + 1).split('#')[0]).get('table');
+    }
+    return cleanTable(t);
+  }
+  function setTable(t, fromQr) {
+    if (!t) return;
+    state.table = t;
+    state.tableFromQr = !!fromQr;
+    try { sessionStorage.setItem('mala-table', t); } catch (e) {}
+    renderPlaque();
+  }
+  function renderPlaque() {
+    const el = $('plaque');
+    if (!state.table) { el.hidden = true; return; }
+    const isNumber = /^\d+$/.test(state.table);
+    el.textContent = (isNumber ? 'โต๊ะ ' : '') + state.table;
+    el.hidden = false;
+  }
+
+  // ---------- เบอร์โทรและรูป ----------
+  // เบอร์โทรไทย: เก็บเฉพาะตัวเลข ยอมรับ +66 แล้วแปลงเป็นขึ้นต้นด้วย 0 คืนค่าว่างถ้าไม่ถูกต้อง
+  function cleanPhone(v) {
+    let d = String(v == null ? '' : v).replace(/[^\d+]/g, '');
+    if (d.startsWith('+66')) d = '0' + d.slice(3);
+    d = d.replace(/\D/g, '');
+    return /^0\d{8,9}$/.test(d) ? d : '';
+  }
+  // ย่อรูปจากกล้องให้เล็กลงแล้วแปลงเป็น JPEG
+  async function shrinkPhoto(file) {
+    const url = URL.createObjectURL(file);
+    try {
+      const img = await new Promise((resolve, reject) => {
+        const el = new Image();
+        el.onload = () => resolve(el);
+        el.onerror = () => reject(new Error('อ่านรูปไม่ได้'));
+        el.src = url;
+      });
+      const w0 = img.naturalWidth, h0 = img.naturalHeight;
+      if (!w0 || !h0) throw new Error('อ่านรูปไม่ได้');
+      const scale = Math.min(1, PHOTO_MAX_SIDE / Math.max(w0, h0));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(w0 * scale));
+      canvas.height = Math.max(1, Math.round(h0 * scale));
+      const g = canvas.getContext('2d');
+      g.fillStyle = '#fff';
+      g.fillRect(0, 0, canvas.width, canvas.height);
+      g.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const out = canvas.toDataURL('image/jpeg', PHOTO_QUALITY);
+      if (!out.startsWith('data:image/jpeg;base64,')) throw new Error('แปลงรูปไม่ได้');
+      return out;
+    } finally { URL.revokeObjectURL(url); }
+  }
+  function renderPhoto() {
+    const has = !!state.photo;
+    $('photoPreview').hidden = !has;
+    if (has) $('photoPreview').src = state.photo; else $('photoPreview').removeAttribute('src');
+    $('photoBtn').textContent = has ? 'ถ่ายใหม่' : 'ถ่ายรูป';
+    $('photoBtn').classList.toggle('retake', has);
+  }
+  async function onPhotoPicked(e) {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';                    // ให้เลือกรูปเดิมซ้ำได้
+    if (!file) return;
+    $('photoBtn').classList.add('is-busy');
+    $('photoBtn').textContent = 'กำลังเตรียมรูป…';
+    try {
+      state.photo = await shrinkPhoto(file);
+      state.clientId = '';
+      showError('');
+    } catch (err) {
+      showError('อ่านรูปนี้ไม่ได้ ลองถ่ายใหม่อีกครั้ง');
+    }
+    $('photoBtn').classList.remove('is-busy');
+    renderPhoto();
+  }
+
+  // ---------- ตะกร้า ----------
+  function saveCart() {
+    try {
+      localStorage.setItem(CART_KEY, JSON.stringify({ cart: state.cart, spice: state.spice, note: state.note, phone: state.phone, ts: Date.now() }));
+    } catch (e) {}
+  }
+  function loadCart() {
+    try {
+      const d = JSON.parse(localStorage.getItem(CART_KEY) || 'null');
+      if (!d || Date.now() - d.ts > CART_MAX_AGE) return;
+      state.cart = d.cart && typeof d.cart === 'object' ? d.cart : {};
+      state.spice = SPICE_LEVELS.includes(d.spice) ? d.spice : '';
+      state.note = typeof d.note === 'string' ? d.note : '';
+      state.phone = typeof d.phone === 'string' ? d.phone.slice(0, 15) : '';
+    } catch (e) {}
+  }
+  // ตัดรายการที่ร้านเลิกขายหรือของหมดออกจากตะกร้า
+  function pruneCart() {
+    const ok = {};
+    state.menu.forEach(m => {
+      const q = Math.floor(Number(state.cart[m.name]));
+      if (m.available && q >= 1) ok[m.name] = Math.min(q, MAX_QTY);
+    });
+    state.cart = ok;
+  }
+  const cartLines = () => state.menu
+    .map((m, i) => ({ i, m, qty: state.cart[m.name] || 0 }))
+    .filter(l => l.qty > 0);
+  const cartSubtotal = () => round2(cartLines().reduce((s, l) => s + l.m.price * l.qty, 0));
+  const cartTotal = () => round2(cartSubtotal() - promoInfo().discount);
+
+  // ---------- โปรซื้อครบแถมฟรี ----------
+  // ตัวอย่าง ซื้อ 10 แถม 1: ทุก 11 ไม้ของรายการที่ร่วมโปร ฟรี 1 ไม้ (ไม้ที่ราคาถูกที่สุด)
+  // ตัวเลขบนหน้านี้ไว้แสดงให้ลูกค้าดู ยอดจริงหลังร้านคิดซ้ำจากชีตอีกครั้ง
+  const promoOn = () => state.promo.buy >= 1 && state.promo.free >= 1 && state.menu.some(m => m.promo);
+  const promoUnit = () => { const m = state.menu.find(x => x.promo) || state.menu[0]; return (m && m.unit) || 'ชิ้น'; };
+  function promoInfo() {
+    const prices = [];
+    cartLines().forEach(l => { if (l.m.promo) for (let k = 0; k < l.qty; k++) prices.push(l.m.price); });
+    const n = prices.length;
+    if (!promoOn() || !n) return { n, free: 0, discount: 0, hint: '' };
+    const { buy, free } = state.promo, group = buy + free, unit = promoUnit();
+    const freeCount = Math.floor(n / group) * free;
+    prices.sort((a, b) => a - b);
+    const discount = round2(prices.slice(0, freeCount).reduce((s, p) => s + p, 0));
+    const r = n % group;
+    const got = freeCount ? `ได้ฟรี ${freeCount} ${unit}แล้ว` : '';
+    let hint;
+    if (r >= buy) hint = `เลือกเพิ่มได้อีก ${group - r} ${unit} ฟรี`;
+    else if (r === 0) hint = got;
+    else hint = (got ? got + ' ' : '') + `อีก ${buy - r} ${unit} ได้ฟรี${got ? 'เพิ่ม' : ''} ${free} ${unit}`;
+    return { n, free: freeCount, discount, hint };
+  }
+  const promoName = () => `โปรซื้อ ${state.promo.buy} ฟรี ${state.promo.free}`;
+  const cartCount = () => cartLines().reduce((s, l) => s + l.qty, 0);
+  const needsSpice = () => cartLines().some(l => !CFG.NO_SPICE_CATEGORIES.includes(l.m.cat));
+
+  function changeQty(i, delta) {
+    const m = state.menu[i];
+    if (!m || !m.available || state.sending) return;
+    const q = Math.max(0, Math.min(MAX_QTY, (state.cart[m.name] || 0) + delta));
+    if (q) state.cart[m.name] = q; else delete state.cart[m.name];
+    state.clientId = '';
+    saveCart();
+    refreshItem(i);
+    renderBar();
+    if ($('sheet').open) {
+      if (cartCount() === 0) $('sheet').close(); else renderSheet();
+    }
+  }
+
+  // ---------- วาดหน้าเมนู ----------
+  function stepperHTML(i) {
+    const m = state.menu[i];
+    if (!m.available) return '<span class="soldout">หมด</span>';
+    const q = state.cart[m.name] || 0;
+    const name = esc(m.name);
+    const plus = `<button class="round plus" type="button" data-act="inc" data-i="${i}" aria-label="เพิ่ม ${name}">+</button>`;
+    if (!q) return plus;
+    return `<button class="round minus" type="button" data-act="dec" data-i="${i}" aria-label="ลด ${name}">−</button>` +
+           `<span class="qty" aria-label="${name} จำนวน ${q}">${q}</span>` + plus;
+  }
+
+  function renderMenu() {
+    const cats = [];
+    state.menu.forEach((m, i) => {
+      let c = cats.find(x => x.name === m.cat);
+      if (!c) cats.push(c = { name: m.cat, rows: [] });
+      c.rows.push(i);
+    });
+    if (!cats.length) {
+      $('tabs').innerHTML = '';
+      $('menu').innerHTML = '<div class="state"><p>ร้านยังไม่ได้ใส่เมนู</p></div>';
+      return;
+    }
+    $('tabs').innerHTML = cats.map((c, n) =>
+      `<button class="tab" type="button" data-cat="${n}">${esc(c.name)}</button>`).join('');
+    $('menu').innerHTML = cats.map((c, n) => `
+      <section class="cat" id="cat-${n}" data-cat="${n}">
+        <h2><span class="brush">${esc(c.name)}</span></h2>
+        <ul class="items">${c.rows.map(i => {
+          const m = state.menu[i];
+          const price = money(m.price) + (m.unit ? ' ต่อ' + esc(m.unit) : '') + (promoOn() && !m.promo ? '<small>ไม่ร่วมโปร</small>' : '');
+          return `<li class="item${m.available ? '' : ' is-out'}${state.cart[m.name] ? ' in-cart' : ''}" id="item-${i}">
+            <div><span class="item-name">${esc(m.name)}</span><span class="item-price">${price}</span></div>
+            <div class="stepper" id="st-${i}">${stepperHTML(i)}</div>
+          </li>`;
+        }).join('')}</ul>
+      </section>`).join('');
+    watchSections();
+  }
+
+  function refreshItem(i) {
+    const row = $('item-' + i), st = $('st-' + i);
+    if (!row || !st) return;
+    const hadFocus = st.contains(document.activeElement);
+    st.innerHTML = stepperHTML(i);
+    row.classList.toggle('in-cart', !!state.cart[state.menu[i].name]);
+    if (hadFocus) { const b = st.querySelector('[data-act="inc"]'); if (b) b.focus(); }
+  }
+
+  // ป้ายราคาบนหัวร้าน: ใช้ราคาที่พบบ่อยที่สุดในเมนู และเงื่อนไขโปรจากหลังร้าน
+  function renderHero() {
+    const count = {};
+    state.menu.forEach(m => { count[m.price] = (count[m.price] || 0) + 1; });
+    const common = Object.keys(count).map(Number).sort((a, b) => count[b] - count[a] || a - b)[0];
+    $('priceBanner').hidden = common == null;
+    if (common != null) $('priceBanner').innerHTML = `${esc(promoUnit())}ละ <b>${esc(common.toLocaleString('th-TH'))}</b> บาท`;
+    $('dealLine').hidden = !promoOn();
+    if (promoOn()) $('dealText').innerHTML = `ซื้อ ${Number(state.promo.buy)} <em>ฟรี ${Number(state.promo.free)}</em>`;
+  }
+
+  function renderBar() {
+    const n = cartCount();
+    $('orderBar').hidden = n === 0;
+    const lines = cartLines();
+    const unit = lines.length && lines.every(l => l.m.unit === lines[0].m.unit) && lines[0].m.unit ? lines[0].m.unit : 'ชิ้น';
+    const deal = promoInfo();
+    $('barCount').textContent = 'เลือกแล้ว ' + n + ' ' + unit + (deal.free ? ' (ฟรี ' + deal.free + ')' : '');
+    $('barTotal').textContent = money(cartTotal());
+    $('nudge').textContent = deal.hint;
+    $('nudge').hidden = !deal.hint;
+  }
+
+  // ไฮไลต์แถบหมวดตามตำแหน่งที่เลื่อนอยู่
+  let activeTab = -1;
+  let tabLockUntil = 0;   // หลังแตะปุ่มหมวด ให้ค้างไฮไลต์ไว้ที่ปุ่มนั้นจนเลื่อนเสร็จ
+  function markTab(n) {
+    if (n === activeTab) return;
+    activeTab = n;
+    const strip = $('tabs');
+    strip.querySelectorAll('.tab').forEach(t => {
+      if (t.dataset.cat === String(n)) {
+        t.setAttribute('aria-current', 'true');
+        // เลื่อนแถบหมวดให้ปุ่มที่เลือกอยู่กลางจอ
+        const left = t.getBoundingClientRect().left - strip.getBoundingClientRect().left + strip.scrollLeft;
+        strip.scrollLeft = left - (strip.clientWidth - t.offsetWidth) / 2;
+      } else t.removeAttribute('aria-current');
+    });
+  }
+  function updateActiveTab() {
+    const secs = document.querySelectorAll('.cat');
+    if (!secs.length || Date.now() < tabLockUntil) return;
+    const line = document.querySelector('.tabs').offsetHeight + 24;
+    let cur = 0;
+    secs.forEach((sec, n) => { if (sec.getBoundingClientRect().top <= line) cur = n; });
+    const atBottom = window.scrollY > 0 && window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+    markTab(atBottom ? secs.length - 1 : cur);
+  }
+  function watchSections() {
+    activeTab = -1;
+    tabLockUntil = 0;
+    updateActiveTab();
+  }
+
+  // ---------- แผ่นสรุปออเดอร์ ----------
+  function renderSheet() {
+    $('lines').innerHTML = cartLines().map(l => `
+      <li class="line">
+        <div><span class="line-name">${esc(l.m.name)}</span>
+          <span class="line-calc">${money(l.m.price)} × ${l.qty} = ${money(round2(l.m.price * l.qty))}</span></div>
+        <div class="stepper">${stepperHTML(l.i)}</div>
+      </li>`).join('');
+    const deal = promoInfo();
+    $('discountRow').hidden = !deal.free;
+    $('discountLabel').textContent = `${promoName()} (ฟรี ${deal.free} ${promoUnit()})`;
+    $('discountAmount').textContent = '−' + money(deal.discount);
+    $('sheetTotal').textContent = money(cartTotal());
+    $('spiceField').hidden = !needsSpice();
+    $('tableField').hidden = state.tableFromQr;
+    $('send').textContent = state.sending ? 'กำลังส่ง…' : 'ส่งออเดอร์ ' + money(cartTotal());
+    $('send').disabled = state.sending;
+  }
+  function showError(msg) {
+    $('error').textContent = msg || '';
+    $('error').hidden = !msg;
+  }
+  function openSheet() {
+    if (!cartCount()) return;
+    $('cartView').hidden = false;
+    $('doneView').hidden = true;
+    $('note').value = state.note;
+    $('phone').value = state.phone;
+    renderPhoto();
+    $('tableInput').value = state.tableFromQr ? '' : state.table;
+    document.querySelectorAll('#spice input').forEach(r => { r.checked = r.value === state.spice; });
+    showError('');
+    renderSheet();
+    $('sheet').showModal();
+  }
+
+  // ---------- ติดต่อหลังร้าน ----------
+  async function api(body) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), body ? 60000 : 25000); // ส่งออเดอร์มีรูปแนบ จึงรอนานกว่า
+    try {
+      const opt = body
+        // ส่งเป็น text/plain เพื่อให้เบราว์เซอร์ส่งถึง Apps Script ได้โดยตรง
+        ? { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body), signal: ctrl.signal }
+        : { signal: ctrl.signal };
+      const res = await fetch(body ? CFG.API_URL : CFG.API_URL + '?action=menu', opt);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return await res.json();
+    } finally { clearTimeout(timer); }
+  }
+
+  async function loadMenu() {
+    if (!CFG.API_URL) { state.menu = DEMO_MENU; state.promo = DEMO_PROMO; return; }
+    const data = await api();
+    if (!data || !data.ok || !Array.isArray(data.menu)) throw new Error('menu');
+    state.menu = data.menu.map(m => ({
+      cat: String(m.cat), name: String(m.name), price: Number(m.price) || 0,
+      unit: String(m.unit || ''), available: m.available === true, promo: m.promo === true,
+    }));
+    const pr = data.promo || {};
+    const buy = Math.floor(Number(pr.buy)), free = Math.floor(Number(pr.free));
+    state.promo = buy >= 1 && free >= 1 ? { buy, free } : { buy: 0, free: 0 };
+  }
+
+  async function showMenu() {
+    $('menu').innerHTML = '<div class="state"><p>กำลังโหลดเมนู…</p></div>';
+    try {
+      await loadMenu();
+    } catch (e) {
+      $('tabs').innerHTML = '';
+      $('menu').innerHTML = '<div class="state"><p>โหลดเมนูไม่ได้ ตรวจสัญญาณอินเทอร์เน็ตแล้วลองอีกครั้ง</p>' +
+        '<button class="btn dark" type="button" id="retry">โหลดเมนูอีกครั้ง</button></div>';
+      $('retry').addEventListener('click', showMenu);
+      return;
+    }
+    pruneCart();
+    saveCart();
+    renderHero();
+    renderMenu();
+    renderBar();
+  }
+
+  async function sendOrder() {
+    if (state.sending) return;
+    state.note = $('note').value.trim();
+    state.phone = $('phone').value.trim();
+    if (!state.tableFromQr) state.table = cleanTable($('tableInput').value);
+    saveCart();
+    const phone = cleanPhone(state.phone);
+
+    if (!cartCount()) return;
+    if (!state.table) { showError('ใส่เลขโต๊ะก่อนส่งออเดอร์'); $('tableInput').focus(); return; }
+    if (!state.phone) { showError('ใส่เบอร์โทรก่อนส่งออเดอร์'); $('phone').focus(); return; }
+    if (!phone) { showError('เบอร์โทรไม่ถูกต้อง ใส่ตัวเลข 9 ถึง 10 หลัก ขึ้นต้นด้วย 0'); $('phone').focus(); return; }
+    if (!state.photo) { showError('ถ่ายรูปโต๊ะหรือบริเวณรอบข้างก่อนส่งออเดอร์'); $('photoBtn').scrollIntoView({ block: 'center' }); return; }
+    if (needsSpice() && !state.spice) { showError('เลือกระดับความเผ็ดก่อนส่งออเดอร์'); return; }
+
+    if (!state.clientId) state.clientId = Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
+    const total = cartTotal();
+    const payload = {
+      action: 'order',
+      clientId: state.clientId,
+      table: state.table,
+      customer: state.customer,
+      phone,
+      photo: state.photo,
+      spice: needsSpice() ? state.spice : '',
+      note: state.note,
+      items: cartLines().map(l => ({ name: l.m.name, qty: l.qty })),
+    };
+
+    state.sending = true;
+    showError('');
+    renderSheet();
+    let data;
+    try {
+      if (CFG.API_URL) data = await api(payload);
+      else { await new Promise(r => setTimeout(r, 500)); data = { ok: true, queue: '001', total, table: state.table }; }
+    } catch (e) {
+      data = null;
+    }
+    state.sending = false;
+
+    if (!data) {
+      renderSheet();
+      showError('ส่งออเดอร์ไม่สำเร็จ รายการที่เลือกยังอยู่ครบ กดส่งอีกครั้งได้เลย');
+      return;
+    }
+    if (!data.ok) {
+      if (data.code === 'UNAVAILABLE') {
+        // ของหมดระหว่างที่ลูกค้าเลือกอยู่: โหลดเมนูใหม่แล้วให้ลูกค้าดูรายการอีกครั้ง
+        try { await loadMenu(); } catch (e) {}
+        pruneCart(); saveCart(); renderHero(); renderMenu(); renderBar();
+        if (!cartCount()) { $('sheet').close(); alert(data.error); return; }
+      }
+      renderSheet();
+      showError(data.error || 'ส่งออเดอร์ไม่สำเร็จ ลองอีกครั้ง');
+      return;
+    }
+
+    // สำเร็จ
+    $('doneQueue').textContent = data.queue;
+    $('doneTable').textContent = /^\d+$/.test(state.table) ? 'โต๊ะ ' + state.table : state.table;
+    $('doneTotal').textContent = money(data.total != null ? data.total : total);
+    state.cart = {}; state.note = ''; state.clientId = '';
+    saveCart();
+    renderMenu();
+    renderBar();
+    $('cartView').hidden = true;
+    $('doneView').hidden = false;
+  }
+
+  // ---------- LINE ----------
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = src; s.charset = 'utf-8';
+      s.onload = resolve; s.onerror = () => reject(new Error('โหลดสคริปต์ไม่ได้'));
+      document.head.appendChild(s);
+    });
+  }
+  async function initLine() {
+    if (!CFG.LIFF_ID) return;
+    try {
+      await loadScript('https://static.line-scdn.net/liff/edge/2/sdk.js');
+      await window.liff.init({ liffId: CFG.LIFF_ID });
+      const t = readTableParam();           // หลัง init แล้ว ลิงก์จะมี ?table= ตามปกติ
+      if (t) setTable(t, true);
+      if (window.liff.isLoggedIn()) {
+        const profile = await window.liff.getProfile();
+        state.customer = profile.displayName || '';
+      }
+    } catch (e) {
+      // เปิดนอก LINE หรือ LINE มีปัญหา: ยังสั่งได้ตามปกติ แค่ไม่มีชื่อลูกค้า
+      console.warn('LIFF:', e);
+    }
+  }
+
+  // ---------- เริ่มทำงาน ----------
+  function start() {
+    $('shopName').textContent = CFG.SHOP_NAME;
+    document.title = 'เมนู ' + CFG.SHOP_NAME;
+    $('demoNote').hidden = !!CFG.API_URL;
+
+    $('spice').innerHTML = SPICE_LEVELS.map(s =>
+      `<label><input type="radio" name="spice" value="${s}"><span>${s}</span></label>`).join('');
+
+    const qrTable = readTableParam();
+    if (qrTable) setTable(qrTable, true);
+    else { try { setTable(sessionStorage.getItem('mala-table') || '', true); } catch (e) {} }
+
+    loadCart();
+
+    // ปุ่ม + − ทั้งในหน้าเมนูและในแผ่นสรุป
+    document.addEventListener('click', e => {
+      const b = e.target.closest('[data-act]');
+      if (b) { changeQty(Number(b.dataset.i), b.dataset.act === 'inc' ? 1 : -1); return; }
+      const tab = e.target.closest('.tab');
+      if (tab) {
+        const sec = $('cat-' + tab.dataset.cat);
+        if (sec) { tabLockUntil = Date.now() + 1200; markTab(Number(tab.dataset.cat)); sec.scrollIntoView({ block: 'start' }); }
+        return;
+      }
+      if (e.target.closest('[data-close]') && !state.sending) $('sheet').close();
+    });
+    $('openSheet').addEventListener('click', openSheet);
+    $('send').addEventListener('click', sendOrder);
+    $('spice').addEventListener('change', e => { state.spice = e.target.value; saveCart(); showError(''); });
+    $('note').addEventListener('input', e => { state.note = e.target.value; saveCart(); });
+    $('phone').addEventListener('input', e => { state.phone = e.target.value; state.clientId = ''; saveCart(); });
+    $('photoInput').addEventListener('change', onPhotoPicked);
+    $('sheet').addEventListener('click', e => { if (e.target === $('sheet') && !state.sending) $('sheet').close(); });
+    $('sheet').addEventListener('cancel', e => { if (state.sending) e.preventDefault(); });
+
+    let ticking = false;
+    window.addEventListener('scroll', () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => { ticking = false; updateActiveTab(); });
+    }, { passive: true });
+
+    initLine();
+    showMenu();
+  }
+
+  start();
+})();
+</script>
+</body>
+</html>
