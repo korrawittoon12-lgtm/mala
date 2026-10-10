@@ -287,11 +287,6 @@
         <div class="spice" id="spice"></div>
       </fieldset>
 
-      <div class="field" id="tableField">
-        <label for="tableInput">เลขโต๊ะ</label>
-        <input id="tableInput" inputmode="numeric" maxlength="20" autocomplete="off" placeholder="ดูเลขที่ป้ายบนโต๊ะ">
-      </div>
-
       <div class="field">
         <label for="phone">เบอร์โทร</label>
         <input id="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="15" placeholder="08x-xxx-xxxx">
@@ -406,8 +401,9 @@
   const money = n => '฿' + Number(n).toLocaleString('th-TH', { maximumFractionDigits: 2 });
   const round2 = n => Math.round(n * 100) / 100;
 
-  // ---------- เลขโต๊ะจาก QR ----------
-  // QR แต่ละโต๊ะคือลิงก์ที่ลงท้ายด้วย ?table=เลขโต๊ะ
+  // ---------- เลขโต๊ะ (ไม่บังคับ) ----------
+  // ร้านไม่ถามเลขโต๊ะจากลูกค้าแล้ว พนักงานหาลูกค้าจากเลขคิว รูป และชื่อ
+  // แต่ถ้าลิงก์ที่เปิดลงท้ายด้วย ?table=เลขโต๊ะ ระบบจะยังส่งเลขนั้นไปให้ร้านเห็น
   function cleanTable(t) {
     t = String(t == null ? '' : t).trim().slice(0, 20);
     return t.toLowerCase() === 'takeaway' ? 'กลับบ้าน' : t;
@@ -682,7 +678,6 @@
     $('discountAmount').textContent = '−' + money(deal.discount);
     $('sheetTotal').textContent = money(cartTotal());
     $('spiceField').hidden = !needsSpice();
-    $('tableField').hidden = state.tableFromQr;
     $('send').textContent = state.sending ? 'กำลังส่ง…' : 'ส่งออเดอร์ ' + money(cartTotal());
     $('send').disabled = state.sending;
   }
@@ -697,7 +692,6 @@
     $('note').value = state.note;
     $('phone').value = state.phone;
     renderPhoto();
-    $('tableInput').value = state.tableFromQr ? '' : state.table;
     document.querySelectorAll('#spice input').forEach(r => { r.checked = r.value === state.spice; });
     showError('');
     renderSheet();
@@ -754,12 +748,10 @@
     if (state.sending) return;
     state.note = $('note').value.trim();
     state.phone = $('phone').value.trim();
-    if (!state.tableFromQr) state.table = cleanTable($('tableInput').value);
     saveCart();
     const phone = cleanPhone(state.phone);
 
     if (!cartCount()) return;
-    if (!state.table) { showError('ใส่เลขโต๊ะก่อนส่งออเดอร์'); $('tableInput').focus(); return; }
     if (!state.phone) { showError('ใส่เบอร์โทรก่อนส่งออเดอร์'); $('phone').focus(); return; }
     if (!phone) { showError('เบอร์โทรไม่ถูกต้อง ใส่ตัวเลข 9 ถึง 10 หลัก ขึ้นต้นด้วย 0'); $('phone').focus(); return; }
     if (!state.photo) { showError('ถ่ายรูปโต๊ะหรือบริเวณรอบข้างก่อนส่งออเดอร์'); $('photoBtn').scrollIntoView({ block: 'center' }); return; }
@@ -812,6 +804,7 @@
     // สำเร็จ
     $('doneQueue').textContent = data.queue;
     $('doneTable').textContent = /^\d+$/.test(state.table) ? 'โต๊ะ ' + state.table : state.table;
+    $('doneTable').hidden = !state.table;
     $('doneTotal').textContent = money(data.total != null ? data.total : total);
     state.cart = {}; state.note = ''; state.clientId = '';
     saveCart();

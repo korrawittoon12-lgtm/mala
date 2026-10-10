@@ -142,9 +142,9 @@
     '<rect x="444" y="214" width="16" height="130" fill="#4B5E53"/><circle cx="320" cy="160" r="34" fill="#B5121B"/>' +
     '<text x="320" y="390" text-anchor="middle" font-family="sans-serif" font-size="26" fill="#15251D">รูปตัวอย่าง</text></svg>');
   const demo = [
-    { id: 'demo-001', queue: '001', time: '12:01', table: '4', customer: 'คุณเอ', phone: '0812345678', visits: 3, hasPhoto: true, spice: 'เผ็ดกลาง', note: 'ไม่ใส่ผักชี', status: 'กำลังทำ', total: 120, discount: 12,
+    { id: 'demo-001', queue: '001', time: '12:01', table: '', customer: 'คุณเอ', phone: '0812345678', visits: 3, hasPhoto: true, spice: 'เผ็ดกลาง', note: 'ไม่ใส่ผักชี', status: 'กำลังทำ', total: 120, discount: 12,
       lines: [{ name: 'หมูสไลซ์', qty: 5 }, { name: 'เห็ดเข็มทอง', qty: 3 }, { name: 'ลูกชิ้นปลา', qty: 3 }] },
-    { id: 'demo-002', queue: '002', time: '12:06', table: 'กลับบ้าน', customer: '', phone: '0898765432', hasPhoto: true, spice: 'เผ็ดมาก', note: '', status: 'ใหม่', total: 54, discount: 0,
+    { id: 'demo-002', queue: '002', time: '12:06', table: '', customer: '', phone: '0898765432', hasPhoto: true, spice: 'เผ็ดมาก', note: '', status: 'ใหม่', total: 54, discount: 0,
       lines: [{ name: 'เนื้อวัวสไลซ์', qty: 2 }, { name: 'ปลาหมึกสด', qty: 2 }] },
   ];
 
@@ -227,8 +227,8 @@
     const next = o.status === 'ใหม่' ? ['กำลังทำ', 'เริ่มทำ'] : o.status === 'กำลังทำ' ? ['เสร็จแล้ว', 'ทำเสร็จแล้ว'] : null;
     return `<article class="card" data-status="${esc(o.status)}">
       <div class="card-head">
-        <span class="card-table">${isNum ? 'โต๊ะ ' : ''}${esc(o.table)}</span>
-        <div class="card-meta">คิว ${esc(o.queue)}<small>${esc(o.time)}${o.customer ? ' ' + esc(o.customer) : ''}${o.status === 'ยกเลิก' ? ' (ยกเลิก)' : ''}</small></div>
+        <span class="card-table">${o.table ? (isNum ? 'โต๊ะ ' : '') + esc(o.table) : 'คิว ' + esc(o.queue)}</span>
+        <div class="card-meta">${o.table ? 'คิว ' + esc(o.queue) : ''}<small>${esc(o.time)}${o.customer ? ' ' + esc(o.customer) : ''}${o.status === 'ยกเลิก' ? ' (ยกเลิก)' : ''}</small></div>
       </div>
       ${o.phone ? `<p class="contact"><a href="tel:${esc(o.phone)}">โทร ${esc(showPhone(o.phone))}</a></p>` : ''}
       ${o.visits > 0 ? `<button class="regular" type="button" data-past="${esc(o.id)}">ลูกค้าเก่า เคยสั่ง ${esc(o.visits)} ครั้ง ดูประวัติ</button>` : ''}

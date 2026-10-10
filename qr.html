@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>พิมพ์ QR ติดโต๊ะ</title>
+<title>พิมพ์ QR ของร้าน</title>
 <style>
   * { box-sizing: border-box; }
   body { margin: 0; padding: 1rem; font-family: 'Anuphan', 'Thonburi', system-ui, sans-serif; color: #15251D; line-height: 1.5; }
@@ -30,7 +30,7 @@
 </style>
 </head>
 <body>
-<h1>พิมพ์ QR ติดโต๊ะ</h1>
+<h1>พิมพ์ QR ของร้าน</h1>
 
 <div class="form">
   <div>
@@ -38,10 +38,9 @@
     <input type="text" id="link" placeholder="https://liff.line.me/1234567890-AbcdEfgh">
   </div>
   <div>
-    <label for="count">จำนวนโต๊ะ</label>
-    <input type="number" id="count" min="0" max="200" value="10">
+    <label for="count">จำนวนใบที่จะพิมพ์</label>
+    <input type="number" id="count" min="1" max="60" value="6">
   </div>
-  <label class="check"><input type="checkbox" id="takeaway" checked> ทำ QR สำหรับสั่งกลับบ้านด้วย</label>
   <p class="msg" id="msg" role="alert"></p>
   <div class="row">
     <button type="button" id="make">สร้าง QR</button>
@@ -56,33 +55,30 @@
 <script>
 (() => {
   'use strict';
-  const CFG = Object.assign({ LIFF_ID: '' }, window.SHOP_CONFIG || {});
+  const CFG = Object.assign({ LIFF_ID: '', SHOP_NAME: '' }, window.SHOP_CONFIG || {});
   const $ = id => document.getElementById(id);
   if (CFG.LIFF_ID) $('link').value = 'https://liff.line.me/' + CFG.LIFF_ID;
 
+  // ทุกใบเป็น QR เดียวกัน (ร้านไม่ใช้เลขโต๊ะ) พิมพ์หลายใบไว้ติดตามโต๊ะหรือหน้าร้านได้
   function make() {
-    const base = $('link').value.trim().replace(/[?#].*$/, '').replace(/\/+$/, '');
-    const n = Math.max(0, Math.min(200, Math.floor(Number($('count').value) || 0)));
+    const link = $('link').value.trim().replace(/[?#].*$/, '').replace(/\/+$/, '');
+    const n = Math.max(1, Math.min(60, Math.floor(Number($('count').value) || 1)));
     $('sheet').innerHTML = '';
-    if (!/^https:\/\/.+/.test(base)) { $('msg').textContent = 'ใส่ลิงก์ของร้านก่อน (ขึ้นต้นด้วย https://)'; return; }
+    if (!/^https:\/\/.+/.test(link)) { $('msg').textContent = 'ใส่ลิงก์ของร้านก่อน (ขึ้นต้นด้วย https://)'; return; }
     if (typeof QRCode === 'undefined') { $('msg').textContent = 'โหลดตัวสร้าง QR ไม่ได้ ตรวจอินเทอร์เน็ตแล้วเปิดหน้านี้ใหม่'; return; }
     $('msg').textContent = '';
 
-    const tags = [];
-    for (let i = 1; i <= n; i++) tags.push({ title: 'โต๊ะ ' + i, value: String(i) });
-    if ($('takeaway').checked) tags.push({ title: 'สั่งกลับบ้าน', value: 'takeaway' });
-
-    tags.forEach(t => {
+    for (let i = 0; i < n; i++) {
       const el = document.createElement('div');
       el.className = 'tag';
-      const h = document.createElement('h2'); h.textContent = t.title;
+      const h = document.createElement('h2'); h.textContent = CFG.SHOP_NAME || 'สั่งอาหาร';
       const code = document.createElement('div'); code.className = 'code';
       const p = document.createElement('p'); p.textContent = 'สแกนด้วย LINE เพื่อสั่งอาหาร';
       el.append(h, code, p);
       $('sheet').appendChild(el);
-      new QRCode(code, { text: base + '?table=' + encodeURIComponent(t.value), width: 320, height: 320, correctLevel: QRCode.CorrectLevel.M });
+      new QRCode(code, { text: link, width: 320, height: 320, correctLevel: QRCode.CorrectLevel.M });
       code.removeAttribute('title');
-    });
+    }
   }
 
   $('make').addEventListener('click', make);
