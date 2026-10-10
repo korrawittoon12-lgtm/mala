@@ -76,6 +76,7 @@
 <header class="top">
   <h1>ออเดอร์หลังร้าน</h1>
   <p id="status" role="status"></p>
+  <button class="btn quiet small" id="soundBtn" type="button" hidden>แตะเพื่อเปิดเสียงเตือน</button>
 </header>
 
 <section class="gate" id="gate">
@@ -273,14 +274,20 @@
   function showGate(msg) {
     $('board').hidden = true; $('gate').hidden = false;
     $('gateMsg').textContent = msg || '';
+    $('soundBtn').hidden = true;
     setStatus('');
+  }
+
+  // เบราว์เซอร์ยอมให้เล่นเสียงได้หลังจากมีการแตะจอเท่านั้น
+  function enableSound() {
+    try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); audio.resume(); } catch (e) {}
+    $('soundBtn').hidden = true;
   }
 
   $('startBtn').addEventListener('click', () => {
     key = $('key').value.trim();
     if (CFG.API_URL && !key) { $('gateMsg').textContent = 'ใส่รหัสพนักงานก่อน'; return; }
-    // เบราว์เซอร์ยอมให้เล่นเสียงได้หลังจากมีการกดปุ่มเท่านั้น
-    try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); audio.resume(); } catch (e) {}
+    enableSound();
     $('gateMsg').textContent = '';
     setStatus('กำลังเชื่อมต่อ…');
     known = null;
@@ -320,8 +327,26 @@
 
   document.addEventListener('visibilitychange', () => { if (!document.hidden && timer) refresh(); });
 
-  try { $('key').value = localStorage.getItem(KEY_STORE) || ''; } catch (e) {}
+  // ลิงก์ส่วนตัวของร้านมีรหัสต่อท้ายหลังเครื่องหมาย # (ส่วนนี้ไม่ถูกส่งออกไปที่ไหน)
+  // เปิดจากลิงก์นั้นครั้งเดียว เครื่องจะจำไว้ ครั้งต่อไปเข้าได้เลยไม่ต้องใส่รหัส
+  let saved = '';
+  try { saved = localStorage.getItem(KEY_STORE) || ''; } catch (e) {}
+  const fromLink = (/[#&]k=([^&]+)/.exec(location.hash) || [])[1];
+  if (fromLink) {
+    try { saved = decodeURIComponent(fromLink).trim().slice(0, 60); } catch (e) {}
+    try { localStorage.setItem(KEY_STORE, saved); } catch (e) {}
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+  }
+  $('key').value = saved;
   if (!CFG.API_URL) $('gateMsg').textContent = 'โหมดทดลอง: กดเริ่มได้เลย ไม่ต้องใส่รหัส';
+  else if (saved) {
+    key = saved;
+    $('gate').hidden = true;
+    $('soundBtn').hidden = false;
+    document.addEventListener('pointerdown', enableSound, { once: true });
+    setStatus('กำลังเชื่อมต่อ…');
+    startPolling();
+  }
 })();
 </script>
 </body>
