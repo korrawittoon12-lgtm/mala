@@ -84,6 +84,11 @@
   .deal svg { width: 1.5rem; height: 1.5rem; flex: none; }
   .deal svg:last-child { transform: scaleX(-1); }
   .howto { margin: .5rem 0 0; font-size: .9375rem; color: var(--ink-soft); }
+  .again { margin: .75rem 0 0; }
+  .btn-line {
+    min-height: 2.75rem; padding: 0 1.125rem; white-space: nowrap;
+    background: transparent; border: 1.5px solid var(--ink); border-radius: 999px; font-weight: 500;
+  }
   .demo-note { margin: 0; padding: .5rem 1rem; background: var(--ink); color: var(--cream); font-size: .875rem; text-align: center; }
 
   /* แถบหมวด */
@@ -208,6 +213,20 @@
   .sheet-foot { padding: .75rem 1rem calc(.75rem + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); }
   .error { margin: 0 0 .75rem; padding: .625rem .75rem; border-radius: 10px; background: #FBE3E4; color: var(--red-deep); font-weight: 500; }
 
+  /* แผ่น "ที่เคยสั่ง" */
+  .past-who { margin: 0; color: var(--ink-soft); font-size: .9375rem; }
+  .past-sum { margin: .75rem 0 0; font-weight: 600; }
+  .past-sum small { display: block; font-weight: 400; color: var(--ink-soft); }
+  .past { margin-top: .75rem; padding: .75rem; border: 1.5px solid var(--ink); border-radius: 14px; background: #fff; }
+  .past-head { display: flex; justify-content: space-between; align-items: baseline; gap: .75rem; }
+  .past-head b { font-weight: 600; }
+  .past-status { font-size: .875rem; color: var(--ink-soft); white-space: nowrap; }
+  .past-status.is-cancel { color: var(--red-deep); }
+  .past-items { margin: .375rem 0 .625rem; color: var(--ink-soft); }
+  .past-foot { display: flex; justify-content: space-between; align-items: center; gap: .75rem; }
+  .past-foot span { font-weight: 800; font-style: italic; font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+  .past-empty { margin: 1.25rem 0 .5rem; text-align: center; color: var(--ink-soft); }
+
   .done { text-align: center; padding: 1.5rem 1.25rem 1rem; }
   .done h2 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 2rem; line-height: 1.4; }
   .done .queue { margin: .75rem auto 1rem; width: fit-content; padding: .75rem 2.5rem .625rem; transform: rotate(-3deg); }
@@ -233,6 +252,7 @@
     <p class="brush price-banner" id="priceBanner" hidden></p>
     <p class="deal" id="dealLine" hidden><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M26 4 15 9M24 14H8M26 24 15 19" fill="none" stroke="#B01116" stroke-width="3.5" stroke-linecap="round"/></svg><span id="dealText"></span><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M26 4 15 9M24 14H8M26 24 15 19" fill="none" stroke="#B01116" stroke-width="3.5" stroke-linecap="round"/></svg></p>
     <p class="howto"><span class="nw">เลือกของที่อยากกิน</span> <span class="nw">ใส่จำนวน</span> <span class="nw">แล้วกดส่งออเดอร์</span></p>
+    <p class="again" id="againRow" hidden><button class="btn-line" id="openHistory" type="button">ดูที่เคยสั่ง แล้วสั่งแบบเดิม</button></p>
   </div>
 </header>
 <p class="demo-note" id="demoNote" hidden>โหมดทดลอง: ออเดอร์ยังไม่ถูกส่งไปที่ร้าน</p>
@@ -310,6 +330,18 @@
   </div>
 </dialog>
 
+<dialog id="history" aria-labelledby="historyTitle">
+  <div class="sheet-head">
+    <h2 id="historyTitle">ที่เคยสั่ง</h2>
+    <button class="linklike" type="button" id="historyClose">ปิด</button>
+  </div>
+  <div class="sheet-body">
+    <p class="past-who" id="historyWho"></p>
+    <p class="error" id="historyError" role="alert" hidden></p>
+    <div id="historyList" aria-live="polite"></div>
+  </div>
+</dialog>
+
 <script src="config.js"></script>
 <script>
 (() => {
@@ -344,6 +376,13 @@
     ['ผักและเห็ด', 'ข้าวโพดอ่อน', 12, 'ไม้'], ['ผักและเห็ด', 'บรอกโคลี', 12, 'ไม้'],
   ].map(r => ({ cat: r[0], name: r[1], price: r[2], unit: r[3], available: r[4] !== false, promo: r[5] !== false }));
   const DEMO_PROMO = { buy: 10, free: 1 };
+  // ประวัติตัวอย่าง ใช้ตอนยังไม่ได้ใส่ API_URL
+  const DEMO_HISTORY = [
+    { id: 'demo-2', date: '2026-10-08', time: '18:40', status: 'เสร็จแล้ว', total: 123, discount: 12,
+      lines: [{ name: 'หมูสไลซ์', qty: 6 }, { name: 'ปลาหมึกสด', qty: 1 }, { name: 'เห็ดเข็มทอง', qty: 4 }] },
+    { id: 'demo-1', date: '2026-10-01', time: '12:15', status: 'เสร็จแล้ว', total: 60, discount: 0,
+      lines: [{ name: 'ไก่หมัก', qty: 3 }, { name: 'เห็ดออรินจิ', qty: 2 }] },
+  ];
 
   // ---------- สถานะของหน้า ----------
   const state = {
@@ -357,6 +396,7 @@
     table: '',
     tableFromQr: false,
     customer: '',
+    idToken: '',       // บัตรยืนยันตัวจาก LINE มีเฉพาะเมื่อเปิดเมนูจากใน LINE
     clientId: '',      // รหัสกันส่งซ้ำ เปลี่ยนทุกครั้งที่ตะกร้าเปลี่ยน
     sending: false,
   };
@@ -732,6 +772,7 @@
       clientId: state.clientId,
       table: state.table,
       customer: state.customer,
+      idToken: state.idToken,
       phone,
       photo: state.photo,
       spice: needsSpice() ? state.spice : '',
@@ -780,6 +821,88 @@
     $('doneView').hidden = false;
   }
 
+  // ---------- ที่เคยสั่ง (จำลูกค้าด้วยบัญชี LINE) ----------
+  // หน้าเมนูส่ง "บัตรยืนยันตัว" ที่ LINE ออกให้ไปที่หลังร้าน หลังร้านถาม LINE ว่าเป็นของจริง แล้วจึงส่งประวัติของคนนั้นกลับมา
+  // คนอื่นจึงดูประวัติของเราไม่ได้ และเปลี่ยนมือถือก็ยังเห็นประวัติเดิม
+  const past = { orders: [], busy: false };
+  const canSeeHistory = () => !CFG.API_URL || !!state.idToken;
+  function historyError(msg) { $('historyError').textContent = msg || ''; $('historyError').hidden = !msg; }
+  function thaiDate(iso) {
+    const d = new Date(iso + 'T00:00:00');
+    return isNaN(d) ? '' : d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
+  }
+  const STATUS_TEXT = { 'ใหม่': 'ร้านรับออเดอร์แล้ว', 'กำลังทำ': 'กำลังทำ', 'เสร็จแล้ว': 'เสร็จแล้ว', 'ยกเลิก': 'ยกเลิก' };
+
+  function renderHistory(count) {
+    if (!past.orders.length) {
+      $('historyList').innerHTML = '<p class="past-empty">ยังไม่เคยสั่งกับร้านนี้ผ่าน LINE</p>';
+      return;
+    }
+    const more = count > past.orders.length ? `<small>แสดง ${past.orders.length} ครั้งล่าสุด</small>` : '';
+    $('historyList').innerHTML = `<p class="past-sum">สั่งมาแล้ว ${Number(count)} ครั้ง${more}</p>` +
+      past.orders.map((o, n) => {
+        const canAgain = o.lines.some(l => { const m = state.menu.find(x => x.name === l.name); return m && m.available; });
+        return `<article class="past">
+          <div class="past-head"><b>${esc(thaiDate(o.date))}${o.time ? ' ' + esc(o.time) + ' น.' : ''}</b>
+            <span class="past-status${o.status === 'ยกเลิก' ? ' is-cancel' : ''}">${esc(STATUS_TEXT[o.status] || '')}</span></div>
+          <p class="past-items">${o.lines.map(l => esc(l.name) + ' × ' + esc(l.qty)).join(', ')}</p>
+          <div class="past-foot"><span>${money(o.total)}</span>
+            ${canAgain ? `<button class="btn dark" type="button" data-again="${n}">สั่งแบบเดิม</button>` : '<small>ไม่มีขายแล้ว</small>'}</div>
+        </article>`;
+      }).join('');
+  }
+
+  async function loadHistory() {
+    if (past.busy) return;
+    past.busy = true;
+    historyError('');
+    $('historyList').innerHTML = '<p class="past-empty">กำลังโหลด…</p>';
+    let data = null;
+    try {
+      if (CFG.API_URL) data = await api({ action: 'history', idToken: state.idToken });
+      else { await new Promise(r => setTimeout(r, 300)); data = { ok: true, count: DEMO_HISTORY.length, orders: DEMO_HISTORY }; }
+    } catch (e) {}
+    past.busy = false;
+    if (!data || !data.ok || !Array.isArray(data.orders)) {
+      past.orders = []; $('historyList').innerHTML = '';
+      historyError((data && data.error) || 'ดูประวัติไม่ได้ ตรวจสัญญาณอินเทอร์เน็ตแล้วลองอีกครั้ง');
+      return;
+    }
+    past.orders = data.orders.map(o => ({
+      id: String(o.id), date: String(o.date || ''), time: String(o.time || ''), status: String(o.status || ''),
+      total: Number(o.total) || 0,
+      lines: (Array.isArray(o.lines) ? o.lines : []).map(l => ({ name: String(l.name), qty: Math.floor(Number(l.qty)) || 0 })).filter(l => l.qty > 0),
+    }));
+    renderHistory(Number(data.count) || 0);
+  }
+
+  // ใส่รายการของออเดอร์เก่าลงตะกร้า แล้วเปิดแผ่นสรุปให้ตรวจและแก้จำนวนก่อนส่ง
+  function orderAgain(o) {
+    const cart = {}, missing = [];
+    o.lines.forEach(l => {
+      const m = state.menu.find(x => x.name === l.name);
+      if (!m || !m.available) { missing.push(l.name); return; }
+      cart[m.name] = Math.min(MAX_QTY, (cart[m.name] || 0) + l.qty);
+    });
+    if (!Object.keys(cart).length) { historyError('รายการในออเดอร์นี้ไม่มีขายแล้ว'); return; }
+    if (cartCount() && !confirm('เปลี่ยนรายการที่เลือกไว้ เป็นรายการของออเดอร์นี้ใช่ไหม')) return;
+    state.cart = cart;
+    state.clientId = '';
+    saveCart();
+    renderMenu();
+    renderBar();
+    $('history').close();
+    openSheet();
+    if (missing.length) showError('ตอนนี้ไม่มีขาย: ' + missing.join(', ') + ' ส่วนรายการที่เหลือใส่ให้แล้ว');
+  }
+
+  function openHistory() {
+    if (!canSeeHistory()) return;
+    $('historyWho').textContent = state.customer ? 'ออเดอร์ที่สั่งด้วยบัญชี LINE ของ ' + state.customer : (CFG.API_URL ? '' : 'ตัวอย่างประวัติ (โหมดทดลอง)');
+    $('history').showModal();
+    loadHistory();
+  }
+
   // ---------- LINE ----------
   function loadScript(src) {
     return new Promise((resolve, reject) => {
@@ -799,6 +922,8 @@
       if (window.liff.isLoggedIn()) {
         const profile = await window.liff.getProfile();
         state.customer = profile.displayName || '';
+        // บัตรยืนยันตัวจาก LINE (ต้องติ๊ก openid ตอนสร้าง LIFF) ใช้ผูกออเดอร์กับบัญชี LINE และดูที่เคยสั่ง
+        try { state.idToken = window.liff.getIDToken() || ''; } catch (e) { state.idToken = ''; }
       }
     } catch (e) {
       // เปิดนอก LINE หรือ LINE มีปัญหา: ยังสั่งได้ตามปกติ แค่ไม่มีชื่อลูกค้า
@@ -834,6 +959,13 @@
       if (e.target.closest('[data-close]') && !state.sending) $('sheet').close();
     });
     $('openSheet').addEventListener('click', openSheet);
+    $('openHistory').addEventListener('click', openHistory);
+    $('historyClose').addEventListener('click', () => $('history').close());
+    $('historyList').addEventListener('click', e => {
+      const b = e.target.closest('[data-again]');
+      if (b && past.orders[Number(b.dataset.again)]) orderAgain(past.orders[Number(b.dataset.again)]);
+    });
+    $('history').addEventListener('click', e => { if (e.target === $('history')) $('history').close(); });
     $('send').addEventListener('click', sendOrder);
     $('spice').addEventListener('change', e => { state.spice = e.target.value; saveCart(); showError(''); });
     $('note').addEventListener('input', e => { state.note = e.target.value; saveCart(); });
@@ -849,7 +981,9 @@
       requestAnimationFrame(() => { ticking = false; updateActiveTab(); });
     }, { passive: true });
 
-    initLine();
+    // ปุ่ม "ดูที่เคยสั่ง" ขึ้นเมื่อรู้แล้วว่าลูกค้าเปิดจาก LINE (หรือเป็นโหมดทดลอง)
+    $('againRow').hidden = !canSeeHistory();
+    initLine().then(() => { $('againRow').hidden = !canSeeHistory(); });
     showMenu();
   }
 
