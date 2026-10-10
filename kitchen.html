@@ -246,7 +246,8 @@
     try {
       const data = await api({ action: 'orders' });
       if (!data.ok) {
-        if (data.code === 'KEY') { stop(); showGate(data.error); return; }
+        // ถ้ายังไม่เคยใส่รหัสเลย แปลว่าร้านเปิดระบบรหัสไว้: ให้ใส่รหัสโดยไม่ต้องขึ้นข้อความผิดพลาด
+        if (data.code === 'KEY') { stop(); showGate(key ? data.error : ''); return; }
         throw new Error(data.error);
       }
       orders = data.orders || [];
@@ -339,11 +340,14 @@
   }
   $('key').value = saved;
   if (!CFG.API_URL) $('gateMsg').textContent = 'โหมดทดลอง: กดเริ่มได้เลย ไม่ต้องใส่รหัส';
-  else if (saved) {
+  else {
+    // ลองเข้าเลยทุกครั้ง ถ้าร้านไม่ได้ใช้ระบบรหัส จะเห็นออเดอร์ทันที
+    // ถ้าร้านใช้ระบบรหัสและเครื่องนี้ยังไม่มีรหัส หลังร้านจะตอบกลับมา แล้วช่องใส่รหัสจะขึ้นเอง
     key = saved;
     $('gate').hidden = true;
     $('soundBtn').hidden = false;
-    document.addEventListener('pointerdown', enableSound, { once: true });
+    // ใช้ click (ไม่ใช่ตอนนิ้วเพิ่งแตะ) เพราะปุ่มเปิดเสียงจะหายไปและหน้าจอขยับ ถ้าขยับก่อนยกนิ้ว การแตะครั้งแรกจะไม่ติด
+    document.addEventListener('click', enableSound, { once: true, capture: true });
     setStatus('กำลังเชื่อมต่อ…');
     startPolling();
   }
