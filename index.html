@@ -60,11 +60,12 @@
     font-family: var(--display); font-weight: 400;
     font-size: clamp(3.25rem, 19vw, 5.5rem); line-height: 1.3;
     transform: rotate(-4deg);
-    /* ตำแหน่งลูกไฟ ปรับได้ 3 ค่านี้ */
-    --flame-x: 22.5%;     /* ซ้าย-ขวา: 0% คือขอบซ้ายของชื่อร้าน ค่านี้คือเหนือตัว "ม" และไม่บังไม้เอก */
-    --flame-drop: .33em;  /* สูง-ต่ำ: ยิ่งมากยิ่งลงมาทับหัวตัวอักษร */
-    --flame-size: .52em;  /* ขนาด */
+    /* ลูกไฟใช้แทนวรรณยุกต์ตัวแรกของชื่อร้าน (ไม้เอกของ "ม่") และเกาะอยู่กับตัวอักษรตัวนั้น ปรับได้ 3 ค่านี้ */
+    --flame-x: 56%;       /* ซ้าย-ขวา เทียบกับความกว้างของตัวอักษรที่ลูกไฟเกาะ: 50% คือกึ่งกลาง */
+    --flame-drop: .42em;  /* สูง-ต่ำ: ยิ่งมากยิ่งลงมาใกล้หัวตัวอักษร */
+    --flame-size: .42em;  /* ขนาด */
   }
+  .flame-at { position: relative; display: inline-block; }
   .flame {
     position: absolute; left: var(--flame-x); top: var(--flame-drop);
     width: var(--flame-size); height: calc(var(--flame-size) * 1.25);
@@ -952,9 +953,27 @@
     }
   }
 
+  // ชื่อร้านบนหัว: ลูกไฟใช้แทนวรรณยุกต์ตัวแรกของชื่อ (ไม้เอกของ "ม่" ใน หม่าล่าซัง) แบบเดียวกับโปสเตอร์ของร้าน
+  // จึงเอาวรรณยุกต์ตัวนั้นออกจากตัวหนังสือที่แสดง แล้วให้ลูกไฟเกาะอยู่เหนือตัวอักษรตัวเดียวกัน
+  function renderShopName() {
+    const name = String(CFG.SHOP_NAME), sn = $('shopName'), flame = document.querySelector('.hero .flame');
+    sn.parentNode.setAttribute('aria-label', name);       // โปรแกรมอ่านหน้าจอยังอ่านชื่อร้านเต็ม
+    const tone = /[\u0E48-\u0E4B]/.exec(name);
+    let start = tone ? tone.index - 1 : 0, end = tone ? tone.index : 1;
+    // ถ้าใต้วรรณยุกต์มีสระบน (เช่น ี ื) ให้ถอยไปเริ่มที่พยัญชนะ
+    while (start > 0 && /[\u0E31\u0E34-\u0E3A\u0E47\u0E4C-\u0E4E]/.test(name[start])) start--;
+    if (!flame || !name || (tone && tone.index === 0)) { sn.textContent = name; return; }
+    const at = document.createElement('span');
+    at.className = 'flame-at';
+    at.textContent = name.slice(start, end);
+    at.appendChild(flame);
+    sn.textContent = '';
+    sn.append(name.slice(0, start), at, name.slice(tone ? tone.index + 1 : end));
+  }
+
   // ---------- เริ่มทำงาน ----------
   function start() {
-    $('shopName').textContent = CFG.SHOP_NAME;
+    renderShopName();
     document.title = 'เมนู ' + CFG.SHOP_NAME;
     $('demoNote').hidden = !!CFG.API_URL;
 
