@@ -253,6 +253,7 @@
     <p class="deal" id="dealLine" hidden><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M26 4 15 9M24 14H8M26 24 15 19" fill="none" stroke="#B01116" stroke-width="3.5" stroke-linecap="round"/></svg><span id="dealText"></span><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M26 4 15 9M24 14H8M26 24 15 19" fill="none" stroke="#B01116" stroke-width="3.5" stroke-linecap="round"/></svg></p>
     <p class="howto"><span class="nw">เลือกของที่อยากกิน</span> <span class="nw">ใส่จำนวน</span> <span class="nw">แล้วกดส่งออเดอร์</span></p>
     <p class="again" id="againRow" hidden><button class="btn-line" id="openHistory" type="button">ดูที่เคยสั่ง แล้วสั่งแบบเดิม</button></p>
+    <p class="again" id="loginRow" hidden><button class="btn-line" id="lineLogin" type="button">เข้าสู่ระบบด้วย LINE เพื่อดูที่เคยสั่ง</button></p>
   </div>
 </header>
 <p class="demo-note" id="demoNote" hidden>โหมดทดลอง: ออเดอร์ยังไม่ถูกส่งไปที่ร้าน</p>
@@ -392,6 +393,7 @@
     tableFromQr: false,
     customer: '',
     idToken: '',       // บัตรยืนยันตัวจาก LINE มีเฉพาะเมื่อเปิดเมนูจากใน LINE
+    canLogin: false,   // เปิดนอกแอป LINE และยังไม่ได้เข้าสู่ระบบ: โชว์ปุ่มเข้าสู่ระบบด้วย LINE
     clientId: '',      // รหัสกันส่งซ้ำ เปลี่ยนทุกครั้งที่ตะกร้าเปลี่ยน
     sending: false,
   };
@@ -917,6 +919,10 @@
         state.customer = profile.displayName || '';
         // บัตรยืนยันตัวจาก LINE (ต้องติ๊ก openid ตอนสร้าง LIFF) ใช้ผูกออเดอร์กับบัญชี LINE และดูที่เคยสั่ง
         try { state.idToken = window.liff.getIDToken() || ''; } catch (e) { state.idToken = ''; }
+      } else {
+        // เปิดในเบราว์เซอร์ทั่วไป (เช่น บนคอมพิวเตอร์): ยังสั่งได้เลยโดยไม่ต้องเข้าสู่ระบบ
+        // แต่ถ้าอยากให้ออเดอร์ผูกกับบัญชี LINE และดูที่เคยสั่งได้ ให้กดปุ่มเข้าสู่ระบบ
+        state.canLogin = true;
       }
     } catch (e) {
       // เปิดนอก LINE หรือ LINE มีปัญหา: ยังสั่งได้ตามปกติ แค่ไม่มีชื่อลูกค้า
@@ -976,7 +982,14 @@
 
     // ปุ่ม "ดูที่เคยสั่ง" ขึ้นเมื่อรู้แล้วว่าลูกค้าเปิดจาก LINE (หรือเป็นโหมดทดลอง)
     $('againRow').hidden = !canSeeHistory();
-    initLine().then(() => { $('againRow').hidden = !canSeeHistory(); });
+    initLine().then(() => {
+      $('againRow').hidden = !canSeeHistory();
+      $('loginRow').hidden = !(state.canLogin && !state.idToken);
+    });
+    $('lineLogin').addEventListener('click', () => {
+      saveCart();   // รายการที่เลือกไว้ยังอยู่หลังกลับมาจากหน้าเข้าสู่ระบบของ LINE
+      try { window.liff.login({ redirectUri: location.href }); } catch (e) { console.warn('LIFF login:', e); }
+    });
     showMenu();
   }
 
