@@ -146,7 +146,9 @@
 <script>
 (() => {
   'use strict';
-  const CFG = Object.assign({ API_URL: '' }, window.SHOP_CONFIG || {});
+  // ALERT_SOUND = ไฟล์เสียงที่เล่นเมื่อมีออเดอร์ใหม่ (วางไว้ข้างไฟล์นี้) ALERT_TIMES = เล่นกี่รอบต่อหนึ่งออเดอร์
+  // จะเปลี่ยนเสียง: เอาไฟล์ใหม่มาแทนโดยใช้ชื่อเดิม หรือใส่ชื่อไฟล์ใหม่ใน config.js ถ้าใส่ '' จะใช้เสียงติ๊ดแบบเดิม
+  const CFG = Object.assign({ API_URL: '', ALERT_SOUND: 'alert.mp3', ALERT_TIMES: 2 }, window.SHOP_CONFIG || {});
   const POLL_MS = 10000;      // ถามหาออเดอร์ใหม่ทุก 10 วินาที
   const KEY_STORE = 'mala-staff-key';
   const $ = id => document.getElementById(id);
@@ -159,6 +161,8 @@
   let timer = null;
   let busy = false;
   let audio = null;
+  let alertBuf = null;        // เสียงเตือนของร้านที่โหลดและถอดรหัสแล้ว ถ้ายังไม่มีหรือโหลดไม่ได้ จะใช้เสียงติ๊ดแทน
+  let alertTries = 0;
   const photos = new Map();   // เลขออเดอร์ -> รูป (โหลดครั้งเดียวแล้วจำไว้)
   const photoFailed = new Set();
   let photoBusy = false;
@@ -230,8 +234,34 @@
     } finally { clearTimeout(t); }
   }
 
+  // โหลดไฟล์เสียงเตือนของร้านมาเตรียมไว้ (ลองใหม่ได้ไม่เกิน 3 ครั้ง ถ้าเน็ตหลุดตอนโหลด)
+  async function loadAlertSound() {
+    if (alertBuf || !audio || !CFG.ALERT_SOUND || alertTries >= 3) return;
+    alertTries++;
+    try {
+      const res = await fetch(CFG.ALERT_SOUND);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.arrayBuffer();
+      // เรียกแบบมี callback เพราะ Safari รุ่นเก่ายังไม่รองรับแบบ promise
+      alertBuf = await new Promise((ok, no) => audio.decodeAudioData(data, ok, no));
+      alertTries = 3;
+    } catch (e) { alertBuf = null; }
+  }
+
+  // เสียงเตือนออเดอร์ใหม่: เล่นไฟล์เสียงของร้าน ถ้าไม่มีไฟล์หรือเล่นไม่ได้ ใช้เสียงติ๊ด 2 ครั้ง
   function beep() {
     if (!audio) return;
+    if (alertBuf) {
+      try {
+        const times = Math.max(1, Math.min(5, Math.floor(Number(CFG.ALERT_TIMES)) || 1));
+        for (let k = 0; k < times; k++) {
+          const src = audio.createBufferSource();
+          src.buffer = alertBuf; src.connect(audio.destination);
+          src.start(audio.currentTime + k * (alertBuf.duration + 0.35));
+        }
+        return;
+      } catch (e) {}
+    }
     try {
       [0, 0.25].forEach(at => {
         const o = audio.createOscillator(), g = audio.createGain();
@@ -342,6 +372,7 @@
       const ids = new Set(orders.map(o => o.id));
       if (known && orders.some(o => o.status === 'ใหม่' && !known.has(o.id))) beep();
       known = ids;
+      if (audio && !alertBuf) loadAlertSound();
       render();
       loadActivePhotos();
       $('gate').hidden = true;
@@ -376,6 +407,7 @@
   // เบราว์เซอร์ยอมให้เล่นเสียงได้หลังจากมีการแตะจอเท่านั้น
   function enableSound() {
     try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); audio.resume(); } catch (e) {}
+    loadAlertSound();
     $('soundBtn').hidden = true;
   }
 
