@@ -174,7 +174,7 @@
   dialog::backdrop { background: rgb(20 18 16 / .65); }
   .sheet-head { display: flex; align-items: center; justify-content: space-between; padding: .75rem 1rem 0; }
   .sheet-head h2 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 1.75rem; line-height: 1.4; }
-  .sheet-body { overflow-y: auto; padding: 0 1rem 1rem; -webkit-overflow-scrolling: touch; }
+  .sheet-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0 1rem 1rem; -webkit-overflow-scrolling: touch; }
   .lines { list-style: none; margin: 0; padding: 0; }
   .line { display: grid; grid-template-columns: 1fr auto; gap: .5rem; align-items: center; padding: .625rem 0; border-bottom: 1px solid var(--line); }
   .line-name { display: block; font-weight: 500; }
@@ -746,8 +746,30 @@
     renderBar();
   }
 
+  // บนมือถือ หลังคีย์บอร์ดหุบ บางครั้งแผ่นสรุปยังจัดวางตามขนาดจอตอนคีย์บอร์ดเปิดอยู่ ทำให้ปุ่มลอยกลางจอและมีที่ว่างด้านล่าง
+  // จึงสั่งให้จัดวางแผ่นใหม่ทุกครั้งที่ขนาดจอเปลี่ยน โดยคงตำแหน่งที่เลื่อนไว้
+  let relayoutTimer = 0;
+  function relayoutSheets() {
+    clearTimeout(relayoutTimer);
+    relayoutTimer = setTimeout(() => {
+      document.querySelectorAll('dialog[open]').forEach(d => {
+        // ระหว่างที่ลูกค้ากำลังพิมพ์อยู่ (คีย์บอร์ดเปิด) ไม่แตะ เพราะจะทำให้คีย์บอร์ดหุบเอง
+        const el = document.activeElement;
+        if (el && d.contains(el) && (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && !/^(radio|checkbox|file|button)$/.test(el.type)))) return;
+        const body = d.querySelector('.sheet-body');
+        const top = body ? body.scrollTop : 0;
+        d.style.display = 'none';
+        void d.offsetHeight;          // บังคับให้เบราว์เซอร์คำนวณใหม่
+        d.style.display = '';
+        if (body) body.scrollTop = top;
+      });
+    }, 120);
+  }
+
   async function sendOrder() {
     if (state.sending) return;
+    // หุบคีย์บอร์ดก่อนส่ง จะได้เห็นปุ่มและข้อความแจ้งผลเต็มจอ
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     state.note = $('note').value.trim();
     state.phone = $('phone').value.trim();
     saveCart();
@@ -972,6 +994,9 @@
     $('photoInput').addEventListener('change', onPhotoPicked);
     $('sheet').addEventListener('click', e => { if (e.target === $('sheet') && !state.sending) $('sheet').close(); });
     $('sheet').addEventListener('cancel', e => { if (state.sending) e.preventDefault(); });
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', relayoutSheets);
+    window.addEventListener('resize', relayoutSheets);
+    window.addEventListener('orientationchange', relayoutSheets);
 
     let ticking = false;
     window.addEventListener('scroll', () => {
