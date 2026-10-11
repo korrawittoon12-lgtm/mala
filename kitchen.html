@@ -134,6 +134,10 @@
   const photos = new Map();   // เลขออเดอร์ -> รูป (โหลดครั้งเดียวแล้วจำไว้)
   const photoFailed = new Set();
   let photoBusy = false;
+  // สถานะที่พนักงานเพิ่งกดบนเครื่องนี้ และหลังร้านยังบันทึกไม่เสร็จหรือยังส่งกลับมาไม่ทัน
+  // ใช้กันไม่ให้การ์ดเด้งกลับไปช่องเดิม เมื่อการดึงออเดอร์รอบถัดไปได้ข้อมูลเก่ามาก่อน
+  const pending = new Map();  // เลขออเดอร์ -> { status, at }
+  const PENDING_MS = 45000;   // ถ้านานกว่านี้แล้วหลังร้านยังไม่ตรง ให้เชื่อหลังร้าน
 
   // ออเดอร์ตัวอย่าง ใช้ตอนยังไม่ได้ใส่ API_URL
   const demoPhoto = 'data:image/svg+xml,' + encodeURIComponent(
@@ -274,6 +278,12 @@
         throw new Error(data.error);
       }
       orders = data.orders || [];
+      orders.forEach(o => {
+        const p = pending.get(o.id);
+        if (!p) return;
+        if (o.status === p.status || Date.now() - p.at > PENDING_MS) pending.delete(o.id);   // หลังร้านตามทันแล้ว
+        else o.status = p.status;                                                            // ยังไม่ทัน: คงสถานะที่เพิ่งกดไว้
+      });
       const ids = new Set(orders.map(o => o.id));
       if (known && orders.some(o => o.status === 'ใหม่' && !known.has(o.id))) beep();
       known = ids;
@@ -338,12 +348,18 @@
     const o = orders.find(x => x.id === id);
     if (!o) return;
     const before = o.status;
+    const mine = { status: to, at: Date.now() };
+    pending.set(id, mine);
     o.status = to; render();                 // เปลี่ยนบนจอทันที แล้วค่อยบันทึก
     try {
       const data = await api({ action: 'status', orderId: id, status: to });
       if (!data.ok) throw new Error(data.error);
     } catch (err) {
-      o.status = before; render();
+      // บันทึกไม่สำเร็จ: คืนการ์ดกลับที่เดิม (หาออเดอร์ใหม่จากรายการล่าสุด เพราะรายการอาจถูกดึงใหม่ไปแล้ว)
+      if (pending.get(id) === mine) pending.delete(id);
+      const cur = orders.find(x => x.id === id);
+      if (cur && cur.status === to) cur.status = before;
+      render();
       setStatus('บันทึกสถานะไม่สำเร็จ ลองกดอีกครั้ง', true);
     }
   });
