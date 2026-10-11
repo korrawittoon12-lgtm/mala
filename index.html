@@ -91,6 +91,8 @@
     background: transparent; border: 1.5px solid var(--ink); border-radius: 999px; font-weight: 500;
   }
   .demo-note { margin: 0; padding: .5rem 1rem; background: var(--ink); color: var(--cream); font-size: .875rem; text-align: center; }
+  /* แถบแจ้งลูกค้าเมื่อร้านกดปิดรับออเดอร์ของวันนี้แล้ว */
+  .closed-note { margin: 0; padding: .75rem 1rem; background: var(--red); color: #fff; font-weight: 600; text-align: center; }
 
   /* แถบหมวด */
   .tabs {
@@ -258,6 +260,7 @@
   </div>
 </header>
 <p class="demo-note" id="demoNote" hidden>โหมดทดลอง: ออเดอร์ยังไม่ถูกส่งไปที่ร้าน</p>
+<p class="closed-note" id="closedNote" role="status" hidden>วันนี้ร้านปิดรับออเดอร์แล้ว ขอบคุณที่อุดหนุน</p>
 
 <nav class="tabs" aria-label="หมวดเมนู"><div class="wrap" id="tabs"></div></nav>
 
@@ -358,6 +361,7 @@
   const CART_MAX_AGE = 6 * 60 * 60 * 1000; // ลืมตะกร้าที่ค้างเกิน 6 ชั่วโมง
   const PHOTO_MAX_SIDE = 1280;             // ย่อรูปให้ด้านยาวไม่เกินเท่านี้ก่อนส่ง จะได้ส่งเร็วและไม่เปลืองเน็ตลูกค้า
   const PHOTO_QUALITY = 0.7;
+  const CLOSED_TEXT = 'วันนี้ร้านปิดรับออเดอร์แล้ว ขอบคุณที่อุดหนุน';
 
   // เมนูตัวอย่าง ใช้เฉพาะตอนยังไม่ได้ใส่ API_URL (เมนูจริงแก้ใน Google Sheet)
   // แต่ละแถว: หมวด, ชื่อ, ราคา, หน่วย, พร้อมขาย, ร่วมโปร
@@ -397,6 +401,7 @@
     canLogin: false,   // เปิดนอกแอป LINE และยังไม่ได้เข้าสู่ระบบ: โชว์ปุ่มเข้าสู่ระบบด้วย LINE
     clientId: '',      // รหัสกันส่งซ้ำ เปลี่ยนทุกครั้งที่ตะกร้าเปลี่ยน
     sending: false,
+    closed: false,     // ร้านกดปิดรับออเดอร์ของวันนี้แล้ว (หลังร้านเป็นคนบอกตอนโหลดเมนู)
   };
 
   const $ = id => document.getElementById(id);
@@ -688,6 +693,7 @@
     $('error').textContent = msg || '';
     $('error').hidden = !msg;
   }
+  function renderClosed() { $('closedNote').hidden = !state.closed; }
   function openSheet() {
     if (!cartCount()) return;
     $('cartView').hidden = false;
@@ -696,7 +702,7 @@
     $('phone').value = state.phone;
     renderPhoto();
     document.querySelectorAll('#spice input').forEach(r => { r.checked = r.value === state.spice; });
-    showError('');
+    showError(state.closed ? CLOSED_TEXT : '');
     renderSheet();
     $('sheet').showModal();
   }
@@ -720,6 +726,7 @@
     if (!CFG.API_URL) { state.menu = DEMO_MENU; state.promo = DEMO_PROMO; return; }
     const data = await api();
     if (!data || !data.ok || !Array.isArray(data.menu)) throw new Error('menu');
+    state.closed = data.closed === true;
     state.menu = data.menu.map(m => ({
       cat: String(m.cat), name: String(m.name), price: Number(m.price) || 0,
       unit: String(m.unit || ''), available: m.available === true, promo: m.promo === true,
@@ -745,6 +752,7 @@
     renderHero();
     renderMenu();
     renderBar();
+    renderClosed();
   }
 
   // บนมือถือ หลังคีย์บอร์ดหุบ บางครั้งแผ่นสรุปยังจัดวางตามขนาดจอตอนคีย์บอร์ดเปิดอยู่ ทำให้ปุ่มลอยกลางจอและมีที่ว่างด้านล่าง
@@ -777,6 +785,15 @@
     const phone = cleanPhone(state.phone);
 
     if (!cartCount()) return;
+    // ร้านปิดรับอยู่: ถามหลังร้านอีกครั้งก่อน เผื่อร้านเปิดรับใหม่แล้ว ถ้ายังปิดก็บอกลูกค้าเลย ไม่ต้องให้กรอกอะไรต่อ
+    if (state.closed) {
+      state.sending = true; showError(''); renderSheet();
+      try { await loadMenu(); } catch (e) {}
+      state.sending = false;
+      pruneCart(); saveCart(); renderHero(); renderMenu(); renderBar(); renderClosed(); renderSheet();
+      if (state.closed) { showError(CLOSED_TEXT); return; }
+      if (!cartCount()) { $('sheet').close(); return; }
+    }
     if (!state.phone) { showError('ใส่เบอร์โทรก่อนส่งออเดอร์'); $('phone').focus(); return; }
     if (!phone) { showError('เบอร์โทรไม่ถูกต้อง ใส่ตัวเลข 9 ถึง 10 หลัก ขึ้นต้นด้วย 0'); $('phone').focus(); return; }
     if (!state.photo) { showError('ถ่ายรูปโต๊ะหรือบริเวณรอบข้างก่อนส่งออเดอร์'); $('photoBtn').scrollIntoView({ block: 'center' }); return; }
@@ -818,9 +835,11 @@
       if (data.code === 'UNAVAILABLE') {
         // ของหมดระหว่างที่ลูกค้าเลือกอยู่: โหลดเมนูใหม่แล้วให้ลูกค้าดูรายการอีกครั้ง
         try { await loadMenu(); } catch (e) {}
-        pruneCart(); saveCart(); renderHero(); renderMenu(); renderBar();
+        pruneCart(); saveCart(); renderHero(); renderMenu(); renderBar(); renderClosed();
         if (!cartCount()) { $('sheet').close(); alert(data.error); return; }
       }
+      // ร้านกดปิดรับระหว่างที่ลูกค้ากำลังเลือกอยู่: ขึ้นแถบแจ้งด้านบนด้วย รายการที่เลือกยังอยู่ครบ
+      if (data.code === 'CLOSED') { state.closed = true; renderClosed(); }
       renderSheet();
       showError(data.error || 'ส่งออเดอร์ไม่สำเร็จ ลองอีกครั้ง');
       return;

@@ -76,6 +76,22 @@
   .past p { margin: .125rem 0 0; color: var(--ink-soft); }
   .past .now { color: var(--chili-deep); font-weight: 500; }
   #past .btn { margin-top: .75rem; }
+  /* แถบ "ปิดรับออเดอร์แล้ว" และแผ่นสรุปยอดของวัน */
+  .closed-bar { margin: 0; padding: .625rem 1rem; background: var(--chili); color: #fff; font-weight: 600; text-align: center; }
+  #sum { width: min(95vw, 34rem); max-height: 92vh; overflow-y: auto; padding: 1rem; }
+  #sum h2 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 1.5rem; }
+  #sum .who { margin: 0 0 .5rem; color: var(--ink-soft); }
+  #sum .who.shut { color: var(--chili-deep); font-weight: 600; }
+  .sum-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 1.125rem; }
+  .sum-table td { padding: .3125rem 0; border-top: 1px solid var(--celadon-line); }
+  .sum-table td + td { text-align: right; white-space: nowrap; padding-left: .75rem; }
+  .sum-table td:last-child { color: var(--ink-soft); font-size: 1rem; }
+  .sum-totals { margin: .75rem 0 0; font-variant-numeric: tabular-nums; }
+  .sum-totals div { display: flex; justify-content: space-between; gap: 1rem; padding: .125rem 0; }
+  .sum-totals .grand { margin-top: .375rem; padding-top: .375rem; border-top: 2px solid var(--ink); font-size: 1.5rem; font-weight: 600; }
+  .sum-warn { margin: .625rem 0 0; padding: .375rem .625rem; background: #FFF6D6; border-radius: 8px; }
+  #sum .msg { min-height: 1.5rem; margin: .625rem 0 0; font-weight: 500; }
+  #sum .btn { margin-top: .5rem; }
   .card-foot { display: flex; gap: .5rem; padding: .625rem .75rem; border-top: 1px solid var(--celadon-line); align-items: center; }
   .card-foot .sum { flex: 1; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.3; }
   .card-foot .sum small { display: block; font-weight: 400; color: var(--chili-deep); }
@@ -87,7 +103,9 @@
   <h1>ออเดอร์หลังร้าน</h1>
   <p id="status" role="status"></p>
   <button class="btn quiet small" id="soundBtn" type="button" hidden>แตะเพื่อเปิดเสียงเตือน</button>
+  <button class="btn quiet small" id="sumBtn" type="button" hidden>สรุปยอด / ปิดรับออเดอร์</button>
 </header>
+<p class="closed-bar" id="closedBar" role="status" hidden>ปิดรับออเดอร์แล้ว ลูกค้าสั่งเพิ่มไม่ได้ (เปิดรับใหม่ได้ที่ปุ่ม สรุปยอด)</p>
 
 <section class="gate" id="gate">
   <label for="key">รหัสพนักงาน</label>
@@ -107,6 +125,16 @@
   <p class="who" id="pastWho"></p>
   <div id="pastList"></div>
   <button class="btn quiet" type="button" id="pastClose">ปิด</button>
+</dialog>
+
+<dialog id="sum" aria-labelledby="sumTitle">
+  <h2 id="sumTitle">สรุปยอดวันนี้</h2>
+  <p class="who" id="sumWhen"></p>
+  <div id="sumBody"></div>
+  <p class="msg" id="sumMsg" role="status"></p>
+  <button class="btn" type="button" id="sumShut" hidden>ปิดรับออเดอร์</button>
+  <button class="btn quiet" type="button" id="sumReopen" hidden>เปิดรับออเดอร์อีกครั้ง</button>
+  <button class="btn quiet" type="button" id="sumBack">กลับไปหน้าออเดอร์</button>
 </dialog>
 
 <dialog id="viewer" aria-label="รูปจากลูกค้า">
@@ -138,6 +166,9 @@
   // ใช้กันไม่ให้การ์ดเด้งกลับไปช่องเดิม เมื่อการดึงออเดอร์รอบถัดไปได้ข้อมูลเก่ามาก่อน
   const pending = new Map();  // เลขออเดอร์ -> { status, at }
   const PENDING_MS = 45000;   // ถ้านานกว่านี้แล้วหลังร้านยังไม่ตรง ให้เชื่อหลังร้าน
+  let closed = false;         // ร้านกดปิดรับออเดอร์ของวันนี้แล้วหรือยัง (หลังร้านเป็นคนบอก)
+  let sumBusy = false;
+  let armedAt = 0;            // เวลาที่กดปุ่มปิดรับครั้งแรก ต้องกดซ้ำอีกครั้งเพื่อยืนยัน
 
   // ออเดอร์ตัวอย่าง ใช้ตอนยังไม่ได้ใส่ API_URL
   const demoPhoto = 'data:image/svg+xml,' + encodeURIComponent(
@@ -152,6 +183,25 @@
       lines: [{ name: 'เนื้อวัวสไลซ์', qty: 2 }, { name: 'ปลาหมึกสด', qty: 2 }] },
   ];
 
+  // สรุปยอดตัวอย่าง คิดจากออเดอร์ตัวอย่างด้านบน (โหมดทดลองเท่านั้น ของจริงหลังร้านเป็นคนคิด)
+  let demoShut = false, demoShutAt = '';
+  function demoSummary(justClosed) {
+    const live = demo.filter(o => o.status !== 'ยกเลิก'), items = {};
+    live.forEach(o => o.lines.forEach(l => {
+      const it = items[l.name] || (items[l.name] = { name: l.name, qty: 0, unit: 'ไม้', sum: 0 });
+      it.qty += l.qty; it.sum += l.qty * (l.name === 'ปลาหมึกสด' ? 15 : 12);
+    }));
+    const total = live.reduce((n, o) => n + o.total, 0), discount = live.reduce((n, o) => n + o.discount, 0);
+    const d = new Date();
+    return {
+      ok: true, date: d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear(), closed: demoShut, closedAt: demoShut ? demoShutAt : '',
+      orders: live.length, pending: live.filter(o => o.status !== 'เสร็จแล้ว').length, cancelled: demo.length - live.length,
+      qty: Object.values(items).reduce((n, x) => n + x.qty, 0), free: discount ? 1 : 0, unit: 'ไม้',
+      gross: total + discount, discount, total, items: Object.values(items).sort((a, b) => b.qty - a.qty),
+      saved: justClosed ? true : undefined, notified: false,
+    };
+  }
+
   async function api(body) {
     if (!CFG.API_URL) {
       if (body.action === 'status') { const o = demo.find(x => x.id === body.orderId); if (o) o.status = body.status; return { ok: true }; }
@@ -161,7 +211,12 @@
         { id: 'old-2', date: '2026-10-03', time: '19:20', status: 'เสร็จแล้ว', total: 84, lines: [{ name: 'หมูสไลซ์', qty: 4 }, { name: 'ไก่หมัก', qty: 3 }] },
         { id: 'old-1', date: '2026-09-26', time: '18:05', status: 'เสร็จแล้ว', total: 60, lines: [{ name: 'เนื้อวัวสไลซ์', qty: 5 }] },
       ] };
-      return { ok: true, orders: JSON.parse(JSON.stringify(demo)) };
+      if (body.action === 'summary' || body.action === 'closeDay' || body.action === 'openDay') {
+        if (body.action === 'closeDay') { demoShut = true; demoShutAt = new Date().toTimeString().slice(0, 5); }
+        if (body.action === 'openDay') demoShut = false;
+        return demoSummary(body.action === 'closeDay');
+      }
+      return { ok: true, orders: JSON.parse(JSON.stringify(demo)), closed: demoShut };
     }
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), 25000);
@@ -291,6 +346,9 @@
       loadActivePhotos();
       $('gate').hidden = true;
       $('board').hidden = false;
+      $('sumBtn').hidden = false;
+      closed = data.closed === true;
+      showClosed();
       try { localStorage.setItem(KEY_STORE, key); } catch (e) {}
       const now = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       setStatus((CFG.API_URL ? '' : 'โหมดทดลอง ') + 'อัปเดตล่าสุด ' + now);
@@ -309,6 +367,9 @@
     $('board').hidden = true; $('gate').hidden = false;
     $('gateMsg').textContent = msg || '';
     $('soundBtn').hidden = true;
+    $('sumBtn').hidden = true;
+    showClosed();
+    if ($('sum').open) $('sum').close();
     setStatus('');
   }
 
@@ -382,6 +443,78 @@
   }
   $('pastClose').addEventListener('click', () => $('past').close());
   $('past').addEventListener('click', e => { if (e.target === $('past')) $('past').close(); });
+
+  // ---------- สรุปยอดของวัน และปิดรับออเดอร์ ----------
+  // กดปุ่ม "สรุปยอด" เพื่อดูยอดได้ตลอดโดยยังไม่ปิดร้าน ในแผ่นสรุปมีปุ่มปิดรับออเดอร์ (ต้องกด 2 ครั้ง กันกดพลาด)
+  // หลังปิดรับ ลูกค้าจะสั่งไม่ได้จนกว่าจะกด "เปิดรับออเดอร์อีกครั้ง" หรือขึ้นวันใหม่
+  function showClosed() { $('closedBar').hidden = !closed || $('board').hidden; }
+  function disarm() { armedAt = 0; $('sumShut').textContent = 'ปิดรับออเดอร์'; }
+
+  function renderSummary(s) {
+    closed = s.closed === true;
+    showClosed();
+    $('sumWhen').textContent = 'วันที่ ' + s.date + (closed ? ' ปิดรับออเดอร์แล้ว' + (s.closedAt ? 'เมื่อ ' + s.closedAt + ' น.' : '') : ' ยังเปิดรับออเดอร์อยู่');
+    $('sumWhen').classList.toggle('shut', closed);
+    const items = Array.isArray(s.items) ? s.items : [];
+    const rows = items.map(x => `<tr><td>${esc(x.name)}</td><td><b>${Number(x.qty)}</b> ${esc(x.unit || '')}</td><td>${money(x.sum)}</td></tr>`).join('');
+    $('sumBody').innerHTML =
+      (rows ? `<table class="sum-table"><tbody>${rows}</tbody></table>` : '<p class="empty">วันนี้ยังไม่มีออเดอร์</p>') +
+      `<div class="sum-totals">
+        <div><span>จำนวนออเดอร์</span><b>${Number(s.orders)}</b></div>
+        <div><span>ขายไปทั้งหมด</span><b>${Number(s.qty)} ${esc(s.unit || '')}${s.free ? ' (แถมฟรี ' + Number(s.free) + ')' : ''}</b></div>
+        ${s.discount ? `<div><span>ยอดก่อนหักโปร</span><b>${money(s.gross)}</b></div><div><span>ส่วนลดโปร</span><b>−${money(s.discount)}</b></div>` : ''}
+        <div class="grand"><span>ยอดเงินรวม</span><b>${money(s.total)}</b></div>
+      </div>` +
+      (s.pending ? `<p class="sum-warn">ยังมี ${Number(s.pending)} ออเดอร์ที่ยังทำไม่เสร็จ (นับรวมในยอดแล้ว)</p>` : '') +
+      (s.cancelled ? `<p class="sum-warn">ยกเลิก ${Number(s.cancelled)} ออเดอร์ ไม่นับในยอด</p>` : '');
+    $('sumShut').hidden = closed;
+    $('sumReopen').hidden = !closed;
+    disarm();
+  }
+
+  // เรียกหลังร้านแล้ววาดสรุปใหม่ คืนข้อมูลสรุป หรือ null ถ้าไม่สำเร็จ (ข้อความผิดพลาดขึ้นในแผ่นสรุป)
+  async function callSummary(body, failText) {
+    if (sumBusy) return null;
+    sumBusy = true;
+    $('sumMsg').textContent = '';
+    let data = null;
+    try { data = await api(body); } catch (e) {}
+    sumBusy = false;
+    if (!data || !data.ok || !Array.isArray(data.items)) { $('sumMsg').textContent = (data && data.error) || failText; return null; }
+    renderSummary(data);
+    return data;
+  }
+
+  $('sumBtn').addEventListener('click', async () => {
+    $('sumWhen').textContent = '';
+    $('sumBody').innerHTML = '<p>กำลังโหลด…</p>';
+    $('sumShut').hidden = true; $('sumReopen').hidden = true;
+    if (!$('sum').open) $('sum').showModal();
+    if (!await callSummary({ action: 'summary' }, 'โหลดสรุปยอดไม่ได้ ปิดหน้านี้แล้วกดปุ่มสรุปยอดอีกครั้ง')) $('sumBody').innerHTML = '';
+  });
+  $('sumShut').addEventListener('click', async () => {
+    if (sumBusy) return;
+    const since = Date.now() - armedAt;
+    if (since < 700) return;                    // แตะเบิ้ลเร็ว ๆ ไม่นับเป็นการยืนยัน
+    if (since > 8000) {                         // กดครั้งแรก: ขอให้กดอีกครั้งภายใน 8 วินาที
+      const mine = armedAt = Date.now();
+      $('sumShut').textContent = 'กดอีกครั้งเพื่อยืนยัน ปิดรับออเดอร์';
+      setTimeout(() => { if (armedAt === mine) disarm(); }, 8000);
+      return;
+    }
+    armedAt = 0;
+    $('sumShut').textContent = 'กำลังปิดรับออเดอร์…';
+    const s = await callSummary({ action: 'closeDay' }, 'ปิดรับออเดอร์ไม่สำเร็จ ลองกดอีกครั้ง');
+    if (!s) { disarm(); return; }
+    $('sumMsg').textContent = 'ปิดรับออเดอร์แล้ว' + (s.saved ? ' จดสรุปลงชีตแล้ว' : ' แต่จดสรุปลงชีตไม่ได้') + (s.notified ? ' และส่งสรุปเข้า LINE แล้ว' : '');
+  });
+  $('sumReopen').addEventListener('click', async () => {
+    const s = await callSummary({ action: 'openDay' }, 'เปิดรับออเดอร์ไม่สำเร็จ ลองกดอีกครั้ง');
+    if (s) $('sumMsg').textContent = 'เปิดรับออเดอร์แล้ว ลูกค้าสั่งได้ตามปกติ';
+  });
+  $('sumBack').addEventListener('click', () => $('sum').close());
+  $('sum').addEventListener('click', e => { if (e.target === $('sum')) $('sum').close(); });
+  $('sum').addEventListener('close', () => { disarm(); if (timer) refresh(); });
 
   $('viewerClose').addEventListener('click', () => $('viewer').close());
   $('viewer').addEventListener('click', e => { if (e.target === $('viewer')) $('viewer').close(); });
