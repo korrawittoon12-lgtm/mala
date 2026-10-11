@@ -230,12 +230,34 @@
   .past-foot span { font-weight: 800; font-style: italic; font-size: 1.25rem; font-variant-numeric: tabular-nums; }
   .past-empty { margin: 1.25rem 0 .5rem; text-align: center; color: var(--ink-soft); }
 
-  .done { text-align: center; padding: 1.5rem 1.25rem 1rem; }
+  /* แผ่น "ส่งออเดอร์แล้ว": เลขคิว สถานะออเดอร์ และ QR จ่ายเงิน เลื่อนดูได้ถ้าจอเตี้ย */
+  #doneView { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+  .done { text-align: center; padding: 1.5rem 1.25rem 1rem; flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
   .done h2 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 2rem; line-height: 1.4; }
   .done .queue { margin: .75rem auto 1rem; width: fit-content; padding: .75rem 2.5rem .625rem; transform: rotate(-3deg); }
   .done .queue small { display: block; font-style: italic; font-weight: 700; }
   .done .queue b { display: block; font-style: italic; font-weight: 800; font-size: 3.5rem; line-height: 1.1; }
   .done p { margin: .25rem 0; }
+  .steps { list-style: none; display: flex; gap: .375rem; margin: .5rem 0 .875rem; padding: 0; font-size: .875rem; line-height: 1.3; }
+  .steps li { flex: 1; display: grid; place-items: center; min-height: 2.75rem; padding: .25rem .375rem; border: 1.5px solid var(--line); border-radius: 12px; color: var(--ink-soft); }
+  .steps li.is-past { border-color: var(--ink); color: var(--ink); }
+  .steps li.is-now { background: var(--ink); border-color: var(--ink); color: var(--cream); font-weight: 600; }
+  .done .cancelled { margin: .5rem 0 .875rem; padding: .625rem .75rem; border-radius: 10px; background: #FBE3E4; color: var(--red-deep); font-weight: 500; }
+  .paid-tag { display: inline-block; margin-left: .375rem; padding: 0 .5rem; border-radius: 6px; background: #1E6B3A; color: #fff; font-weight: 600; font-size: .9375rem; }
+  .pay { margin: 1rem 0 0; padding: .875rem .75rem .75rem; border: 1.5px solid var(--ink); border-radius: 14px; background: #fff; }
+  .pay-title { font-weight: 600; font-size: 1.125rem; }
+  .pay-qr { width: fit-content; margin: .625rem auto; padding: .625rem; background: #fff; }
+  .pay-qr img, .pay-qr canvas { display: block; width: 13rem; height: 13rem; max-width: 100%; }
+  .pay-to { font-variant-numeric: tabular-nums; }
+  .pay-how { color: var(--ink-soft); font-size: .9375rem; }
+  /* แถบ "ออเดอร์ของคุณ" ใต้หัวร้าน: เห็นสถานะได้แม้ปิดแล้วเปิดเมนูใหม่ */
+  .track { background: var(--paper); border-block: 1px solid var(--line); }
+  .track .wrap { padding: .25rem 1rem; }
+  .track-row { display: flex; align-items: center; gap: .75rem; width: 100%; min-height: 3rem; padding: .375rem 0; background: none; border: 0; text-align: left; }
+  .track-row + .track-row { border-top: 1px solid var(--line); }
+  .track-q { font-weight: 800; font-style: italic; font-size: 1.25rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .track-s { flex: 1; }
+  .track-go { text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
 
   @media (prefers-reduced-motion: no-preference) {
     html { scroll-behavior: smooth; }
@@ -261,6 +283,7 @@
 </header>
 <p class="demo-note" id="demoNote" hidden>โหมดทดลอง: ออเดอร์ยังไม่ถูกส่งไปที่ร้าน</p>
 <p class="closed-note" id="closedNote" role="status" hidden>วันนี้ร้านปิดรับออเดอร์แล้ว ขอบคุณที่อุดหนุน</p>
+<section class="track" id="track" aria-label="ออเดอร์ของคุณ" hidden><div class="wrap" id="trackList"></div></section>
 
 <nav class="tabs" aria-label="หมวดเมนู"><div class="wrap" id="tabs"></div></nav>
 
@@ -319,10 +342,22 @@
 
   <div id="doneView" hidden>
     <div class="done">
-      <h2>ส่งออเดอร์แล้ว</h2>
+      <h2 id="doneTitle">ส่งออเดอร์แล้ว</h2>
       <div class="queue brush"><small>คิวที่</small><b id="doneQueue"></b></div>
       <p id="doneTable"></p>
-      <p>ยอดที่ต้องจ่าย <b id="doneTotal"></b></p>
+      <ol class="steps" id="doneSteps" aria-label="สถานะออเดอร์">
+        <li data-step="ใหม่">รับออเดอร์แล้ว</li>
+        <li data-step="กำลังทำ">กำลังทำ</li>
+        <li data-step="เสร็จแล้ว"><span><span class="nw">เสร็จแล้ว</span> <span class="nw">มารับได้</span></span></li>
+      </ol>
+      <p class="cancelled" id="doneCancelled" hidden>ร้านยกเลิกออเดอร์นี้ สอบถามที่ร้านได้เลย</p>
+      <p>ยอดที่ต้องจ่าย <b id="doneTotal"></b><span class="paid-tag" id="donePaid" hidden>จ่ายแล้ว</span></p>
+      <div class="pay" id="payBox" hidden>
+        <p class="pay-title">สแกนจ่ายด้วยพร้อมเพย์</p>
+        <div class="pay-qr" id="payQr"></div>
+        <p class="pay-to">พร้อมเพย์ <b id="payTo"></b> ยอด <b id="payAmount"></b></p>
+        <p class="pay-how" id="payHow"></p>
+      </div>
     </div>
     <div class="sheet-foot">
       <button class="btn red" type="button" data-close>สั่งเพิ่ม</button>
@@ -343,6 +378,7 @@
 </dialog>
 
 <script src="config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 <script>
 (() => {
   'use strict';
@@ -362,6 +398,11 @@
   const PHOTO_MAX_SIDE = 1280;             // ย่อรูปให้ด้านยาวไม่เกินเท่านี้ก่อนส่ง จะได้ส่งเร็วและไม่เปลืองเน็ตลูกค้า
   const PHOTO_QUALITY = 0.7;
   const CLOSED_TEXT = 'วันนี้ร้านปิดรับออเดอร์แล้ว ขอบคุณที่อุดหนุน';
+  const TRACK_KEY = 'mala-orders-v1';
+  const TRACK_MAX = 3;                         // จำออเดอร์ล่าสุดของเครื่องนี้ไม่เกินเท่านี้
+  const TRACK_MAX_AGE = 6 * 60 * 60 * 1000;    // เลิกแสดงออเดอร์ที่เก่ากว่า 6 ชั่วโมง
+  const TRACK_KEEP_FINAL = 30 * 60 * 1000;     // ออเดอร์ที่เสร็จหรือถูกยกเลิกแล้ว แสดงต่ออีก 30 นาที
+  const TRACK_POLL_MS = 20000;                 // ถามสถานะจากหลังร้านทุก 20 วินาที
 
   // เมนูตัวอย่าง ใช้เฉพาะตอนยังไม่ได้ใส่ API_URL (เมนูจริงแก้ใน Google Sheet)
   // แต่ละแถว: หมวด, ชื่อ, ราคา, หน่วย, พร้อมขาย, ร่วมโปร
@@ -696,6 +737,7 @@
   function renderClosed() { $('closedNote').hidden = !state.closed; }
   function openSheet() {
     if (!cartCount()) return;
+    viewing = '';
     $('cartView').hidden = false;
     $('doneView').hidden = true;
     $('note').value = state.note;
@@ -845,18 +887,147 @@
       return;
     }
 
-    // สำเร็จ
-    $('doneQueue').textContent = data.queue;
-    $('doneTable').textContent = /^\d+$/.test(state.table) ? 'โต๊ะ ' + state.table : state.table;
-    $('doneTable').hidden = !state.table;
-    $('doneTotal').textContent = money(data.total != null ? data.total : total);
+    // สำเร็จ: จำออเดอร์นี้ไว้ในเครื่อง เพื่อแสดงสถานะและ QR จ่ายเงิน แม้ลูกค้าปิดแล้วเปิดเมนูใหม่
+    const pay = data.pay && typeof data.pay.qr === 'string' && /^[0-9A-Za-z.]{40,200}$/.test(data.pay.qr)
+      ? { qr: data.pay.qr, to: String(data.pay.to || ''), amount: Number(data.pay.amount) || 0, manual: data.pay.manual === true } : null;
+    const rec = {
+      id: String(data.orderId || 'demo-' + Date.now()), clientId: payload.clientId, queue: String(data.queue),
+      total: Number(data.total != null ? data.total : total), table: state.table, pay, at: Date.now(), status: 'ใหม่', paid: false, finalAt: 0,
+    };
+    tracked = [rec].concat(tracked.filter(t => t.id !== rec.id)).slice(0, TRACK_MAX);
+    saveTracked();
     state.cart = {}; state.note = ''; state.clientId = '';
     saveCart();
     renderMenu();
     renderBar();
+    renderTrack();
+    showDone(rec.id);
+    startTracking();
+  }
+
+  // ---------- ออเดอร์ของลูกค้า: สถานะ และ QR จ่ายเงิน ----------
+  // เครื่องของลูกค้าจำเลขออเดอร์กับรหัสลับที่สุ่มไว้ตอนสั่ง แล้วใช้คู่นี้ถามสถานะจากหลังร้าน คนอื่นจึงดูออเดอร์ของเราไม่ได้
+  let tracked = [];       // [{ id, clientId, queue, total, table, pay, at, status, paid, finalAt }] ใหม่สุดอยู่หน้า
+  let viewing = '';       // เลขออเดอร์ที่กำลังเปิดดูอยู่ในแผ่น
+  let qrShownFor = '';    // วาด QR ของออเดอร์ไหนไว้แล้ว จะได้ไม่วาดซ้ำทุกครั้งที่สถานะอัปเดต
+  let trackTimer = 0, trackBusy = false;
+  const STEP_TEXT = { 'ใหม่': 'ร้านรับออเดอร์แล้ว', 'กำลังทำ': 'กำลังทำ', 'เสร็จแล้ว': 'เสร็จแล้ว มารับได้', 'ยกเลิก': 'ร้านยกเลิกออเดอร์นี้' };
+  const DONE_TITLE = { 'ใหม่': 'ส่งออเดอร์แล้ว', 'กำลังทำ': 'กำลังทำออเดอร์', 'เสร็จแล้ว': 'เสร็จแล้ว มารับได้', 'ยกเลิก': 'ออเดอร์ถูกยกเลิก' };
+  const isFinal = t => t.status === 'เสร็จแล้ว' || t.status === 'ยกเลิก';
+  // ยังต้องถามหลังร้านต่อไหม: ออเดอร์ที่ยังไม่เสร็จ หรือเสร็จแล้วแต่ยังรอร้านกดว่าได้รับเงิน
+  const stillOpen = t => !isFinal(t) || (t.status === 'เสร็จแล้ว' && !t.paid);
+
+  function saveTracked() { try { localStorage.setItem(TRACK_KEY, JSON.stringify(tracked)); } catch (e) {} }
+  function pruneTracked() {
+    const now = Date.now(), n = tracked.length;
+    tracked = tracked.filter(t => now - t.at < TRACK_MAX_AGE && !(t.finalAt && now - t.finalAt > TRACK_KEEP_FINAL));
+    if (tracked.length !== n) saveTracked();
+  }
+  function loadTracked() {
+    try {
+      const d = JSON.parse(localStorage.getItem(TRACK_KEY) || '[]');
+      tracked = (Array.isArray(d) ? d : []).filter(t => t && typeof t.id === 'string' && typeof t.clientId === 'string' && typeof t.queue === 'string')
+        .slice(0, TRACK_MAX).map(t => ({
+          id: t.id, clientId: t.clientId, queue: t.queue, total: Number(t.total) || 0, table: typeof t.table === 'string' ? t.table : '',
+          pay: t.pay && typeof t.pay.qr === 'string' && /^[0-9A-Za-z.]{40,200}$/.test(t.pay.qr) ? { qr: t.pay.qr, to: String(t.pay.to || ''), amount: Number(t.pay.amount) || 0, manual: t.pay.manual === true } : null,
+          at: Number(t.at) || 0, status: STEP_TEXT[t.status] ? t.status : 'ใหม่', paid: t.paid === true, finalAt: Number(t.finalAt) || 0,
+        }));
+    } catch (e) { tracked = []; }
+    pruneTracked();
+  }
+
+  function renderTrack() {
+    pruneTracked();
+    $('track').hidden = !tracked.length;
+    $('trackList').innerHTML = tracked.map(t => `<button class="track-row" type="button" data-track="${esc(t.id)}">
+        <span class="track-q">คิว ${esc(t.queue)}</span>
+        <span class="track-s">${esc(STEP_TEXT[t.status])}${t.paid ? '<span class="paid-tag">จ่ายแล้ว</span>' : ''}</span>
+        <span class="track-go">${t.pay && !t.paid && t.status !== 'ยกเลิก' ? 'ดู QR จ่ายเงิน' : 'ดู'}</span>
+      </button>`).join('');
+  }
+
+  // เติมแผ่น "ส่งออเดอร์แล้ว" ด้วยออเดอร์ที่กำลังดูอยู่ เรียกซ้ำได้ทุกครั้งที่สถานะเปลี่ยน
+  function renderDone() {
+    const t = tracked.find(x => x.id === viewing);
+    if (!t) return;
+    $('doneTitle').textContent = DONE_TITLE[t.status];
+    $('doneQueue').textContent = t.queue;
+    $('doneTable').textContent = /^\d+$/.test(t.table) ? 'โต๊ะ ' + t.table : t.table;
+    $('doneTable').hidden = !t.table;
+    $('doneTotal').textContent = money(t.total);
+    const order = ['ใหม่', 'กำลังทำ', 'เสร็จแล้ว'], at = order.indexOf(t.status);
+    $('doneSteps').hidden = at < 0;
+    $('doneSteps').querySelectorAll('li').forEach((li, n) => {
+      li.classList.toggle('is-past', n < at);
+      li.classList.toggle('is-now', n === at);
+      if (n === at) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current');
+    });
+    $('doneCancelled').hidden = t.status !== 'ยกเลิก';
+    $('donePaid').hidden = !t.paid;
+    const showPay = !!t.pay && !t.paid && t.status !== 'ยกเลิก';
+    $('payBox').hidden = !showPay;
+    if (!showPay) return;
+    $('payTo').textContent = t.pay.to;
+    $('payAmount').textContent = money(t.pay.amount);
+    if (qrShownFor !== t.id) {
+      $('payQr').innerHTML = '';
+      // ตัวสร้าง QR โหลดจากอินเทอร์เน็ต ถ้ายังโหลดไม่เสร็จหรือโหลดไม่ได้ ให้ลูกค้าโอนด้วยเลขพร้อมเพย์แทน แล้วลองวาดใหม่รอบถัดไป
+      if (typeof QRCode !== 'undefined') {
+        try {
+          new QRCode($('payQr'), { text: t.pay.qr, width: 416, height: 416, correctLevel: QRCode.CorrectLevel.M });
+          $('payQr').removeAttribute('title');
+          qrShownFor = t.id;
+        } catch (e) { $('payQr').innerHTML = ''; }
+      }
+    }
+    const hasQr = qrShownFor === t.id;
+    $('payQr').hidden = !hasQr;
+    $('payHow').textContent = hasQr
+      ? 'ถ้าใช้มือถือเครื่องเดียว ให้แคปหน้าจอนี้ แล้วเปิดแอปธนาคาร เลือกสแกนจากรูปภาพ หรือจ่ายเงินสดที่ร้านก็ได้'
+      : t.pay.manual ? 'เปิดแอปธนาคาร เลือกโอนเงินแบบพร้อมเพย์ ใส่เลขและยอดด้านบน หรือจ่ายเงินสดที่ร้านก็ได้'
+      : 'ยังแสดง QR ไม่ได้ ลองปิดแล้วเปิดเมนูนี้ใหม่ หรือจ่ายเงินที่ร้านได้เลย';
+  }
+
+  function showDone(id) {
+    if (!tracked.some(t => t.id === id) || state.sending) return;
+    viewing = id;
     $('cartView').hidden = true;
     $('doneView').hidden = false;
+    renderDone();
+    if (!$('sheet').open) $('sheet').showModal();
+    const box = document.querySelector('#doneView .done');
+    if (box) box.scrollTop = 0;
   }
+
+  // ถามสถานะจากหลังร้าน (เฉพาะตอนที่หน้านี้เปิดอยู่บนจอ) แล้วอัปเดตแถบออเดอร์และแผ่นที่เปิดอยู่
+  async function pollTrack() {
+    pruneTracked();
+    const ask = tracked.filter(stillOpen);
+    if (!ask.length) { stopTracking(); renderTrack(); return; }
+    if (trackBusy || document.hidden || !CFG.API_URL) return;
+    trackBusy = true;
+    let data = null;
+    try { data = await api({ action: 'track', orders: ask.map(t => ({ orderId: t.id, clientId: t.clientId })) }); } catch (e) {}
+    trackBusy = false;
+    if (!data || !data.ok || !Array.isArray(data.orders)) return;
+    let changed = false;
+    data.orders.forEach(o => {
+      const t = tracked.find(x => x.id === String(o.orderId));
+      if (!t || !STEP_TEXT[o.status]) return;
+      const paid = o.paid === true;
+      if (t.status !== o.status || t.paid !== paid) changed = true;
+      t.status = o.status; t.paid = paid;
+      if (isFinal(t) && !t.finalAt) { t.finalAt = Date.now(); changed = true; }
+    });
+    if (changed) saveTracked();
+    renderTrack();
+    renderDone();
+  }
+  function startTracking() {
+    if (trackTimer || !tracked.some(stillOpen)) return;
+    trackTimer = setInterval(pollTrack, TRACK_POLL_MS);
+  }
+  function stopTracking() { clearInterval(trackTimer); trackTimer = 0; }
 
   // ---------- ที่เคยสั่ง (จำลูกค้าด้วยบัญชี LINE) ----------
   // หน้าเมนูส่ง "บัตรยืนยันตัว" ที่ LINE ออกให้ไปที่หลังร้าน หลังร้านถาม LINE ว่าเป็นของจริง แล้วจึงส่งประวัติของคนนั้นกลับมา
@@ -1004,6 +1175,9 @@
     else { try { setTable(sessionStorage.getItem('mala-table') || '', true); } catch (e) {} }
 
     loadCart();
+    loadTracked();
+    renderTrack();
+    if (tracked.some(stillOpen)) { pollTrack(); startTracking(); }
 
     // ปุ่ม + − ทั้งในหน้าเมนูและในแผ่นสรุป
     document.addEventListener('click', e => {
@@ -1018,6 +1192,9 @@
       if (e.target.closest('[data-close]') && !state.sending) $('sheet').close();
     });
     $('openSheet').addEventListener('click', openSheet);
+    $('trackList').addEventListener('click', e => { const b = e.target.closest('[data-track]'); if (b) showDone(b.dataset.track); });
+    $('sheet').addEventListener('close', () => { viewing = ''; });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && tracked.some(stillOpen)) pollTrack(); });
     $('openHistory').addEventListener('click', openHistory);
     $('historyClose').addEventListener('click', () => $('history').close());
     $('historyList').addEventListener('click', e => {

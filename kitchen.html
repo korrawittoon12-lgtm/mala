@@ -95,6 +95,11 @@
   .card-foot { display: flex; gap: .5rem; padding: .625rem .75rem; border-top: 1px solid var(--celadon-line); align-items: center; }
   .card-foot .sum { flex: 1; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.3; }
   .card-foot .sum small { display: block; font-weight: 400; color: var(--chili-deep); }
+  /* รับเงิน: ป้าย "จ่ายแล้ว" และปุ่มกดเมื่อได้รับเงิน */
+  .paid-tag { display: inline-block; margin-left: .375rem; padding: 0 .5rem; border-radius: 6px; background: #1E6B3A; color: #fff; font-weight: 600; font-size: .9375rem; }
+  .pay-row { display: flex; align-items: center; gap: .5rem; padding: .5rem .75rem 0; }
+  .pay-row .btn { flex: 1; }
+  .undo { background: none; border: 0; min-height: 2.75rem; padding: 0 .25rem; color: var(--ink-soft); text-decoration: underline; text-underline-offset: 3px; }
 </style>
 </head>
 <body>
@@ -170,6 +175,7 @@
   // ใช้กันไม่ให้การ์ดเด้งกลับไปช่องเดิม เมื่อการดึงออเดอร์รอบถัดไปได้ข้อมูลเก่ามาก่อน
   const pending = new Map();  // เลขออเดอร์ -> { status, at }
   const PENDING_MS = 45000;   // ถ้านานกว่านี้แล้วหลังร้านยังไม่ตรง ให้เชื่อหลังร้าน
+  const pendingPaid = new Map();  // เลขออเดอร์ -> { paid, at } ที่เพิ่งกด "รับเงินแล้ว" บนเครื่องนี้ (กันเด้งกลับแบบเดียวกับสถานะ)
   let closed = false;         // ร้านกดปิดรับออเดอร์ของวันนี้แล้วหรือยัง (หลังร้านเป็นคนบอก)
   let sumBusy = false;
   let armedAt = 0;            // เวลาที่กดปุ่มปิดรับครั้งแรก ต้องกดซ้ำอีกครั้งเพื่อยืนยัน
@@ -202,6 +208,8 @@
       orders: live.length, pending: live.filter(o => o.status !== 'เสร็จแล้ว').length, cancelled: demo.length - live.length,
       qty: Object.values(items).reduce((n, x) => n + x.qty, 0), free: discount ? 1 : 0, unit: 'ไม้',
       gross: total + discount, discount, total, items: Object.values(items).sort((a, b) => b.qty - a.qty),
+      paid: live.filter(o => o.paid).reduce((n, o) => n + o.total, 0), unpaid: live.filter(o => !o.paid).reduce((n, o) => n + o.total, 0),
+      paidOrders: live.filter(o => o.paid).length, unpaidOrders: live.filter(o => !o.paid).length,
       saved: justClosed ? true : undefined, notified: false,
     };
   }
@@ -209,6 +217,7 @@
   async function api(body) {
     if (!CFG.API_URL) {
       if (body.action === 'status') { const o = demo.find(x => x.id === body.orderId); if (o) o.status = body.status; return { ok: true }; }
+      if (body.action === 'paid') { const o = demo.find(x => x.id === body.orderId); if (o) o.paid = body.paid === true; return { ok: true, paid: body.paid === true }; }
       if (body.action === 'photo') return { ok: true, photo: demoPhoto };
       if (body.action === 'customer') return { ok: true, count: 3, orders: [
         { id: 'demo-001', date: '2026-10-10', time: '12:01', status: 'กำลังทำ', total: 120, lines: [{ name: 'หมูสไลซ์', qty: 5 }, { name: 'เห็ดเข็มทอง', qty: 3 }, { name: 'ลูกชิ้นปลา', qty: 3 }] },
@@ -324,8 +333,11 @@
       ${photoHTML(o)}
       <ul>${o.lines.map(l => `<li><span>${esc(l.name)}</span><b>× ${esc(l.qty)}</b></li>`).join('')}</ul>
       ${o.spice || o.note ? `<div class="tags">${o.spice ? `<p><span class="spice">${esc(o.spice)}</span></p>` : ''}${o.note ? `<p class="note">${esc(o.note)}</p>` : ''}</div>` : ''}
+      ${o.status === 'ยกเลิก' ? '' : `<div class="pay-row">${o.paid
+        ? `<button class="undo" type="button" data-pay="${esc(o.id)}" data-paid="0">แก้เป็นยังไม่จ่าย</button>`
+        : `<button class="btn quiet small" type="button" data-pay="${esc(o.id)}" data-paid="1">รับเงินแล้ว ${money(o.total)}</button>`}</div>`}
       <div class="card-foot">
-        <span class="sum">${money(o.total)}${o.discount > 0 ? `<small>หักโปรแล้ว ${money(o.discount)}</small>` : ''}</span>
+        <span class="sum">${money(o.total)}${o.paid ? '<span class="paid-tag">จ่ายแล้ว</span>' : ''}${o.discount > 0 ? `<small>หักโปรแล้ว ${money(o.discount)}</small>` : ''}</span>
         ${o.status === 'ใหม่' ? `<button class="btn quiet small" type="button" data-id="${esc(o.id)}" data-to="ยกเลิก">ยกเลิก</button>` : ''}
         ${next ? `<button class="btn small" type="button" data-id="${esc(o.id)}" data-to="${next[0]}">${next[1]}</button>` : ''}
       </div>
@@ -336,8 +348,13 @@
     const groups = {
       new: orders.filter(o => o.status === 'ใหม่'),
       doing: orders.filter(o => o.status === 'กำลังทำ'),
-      done: orders.filter(o => o.status === 'เสร็จแล้ว' || o.status === 'ยกเลิก').reverse().slice(0, 15),
+      done: [],
     };
+    // ช่อง "เสร็จแล้ว" แสดง 15 ออเดอร์ล่าสุด แต่ถ้าวันนี้ร้านใช้ปุ่ม "รับเงินแล้ว" ออเดอร์ที่เสร็จแล้วแต่ยังไม่จ่ายจะไม่หลุดจากจอ
+    const usesPay = orders.some(o => o.paid);
+    let recent = 0;
+    groups.done = orders.filter(o => o.status === 'เสร็จแล้ว' || o.status === 'ยกเลิก').reverse()
+      .filter(o => (usesPay && o.status === 'เสร็จแล้ว' && !o.paid) || recent++ < 15);
     const emptyText = { new: 'ยังไม่มีออเดอร์ใหม่', doing: 'ไม่มีออเดอร์ที่กำลังทำ', done: 'ยังไม่มีออเดอร์ที่เสร็จ' };
     Object.keys(groups).forEach(k => {
       $('n-' + k).textContent = k === 'done' ? '' : groups[k].length || '';
@@ -368,6 +385,13 @@
         if (!p) return;
         if (o.status === p.status || Date.now() - p.at > PENDING_MS) pending.delete(o.id);   // หลังร้านตามทันแล้ว
         else o.status = p.status;                                                            // ยังไม่ทัน: คงสถานะที่เพิ่งกดไว้
+      });
+      orders.forEach(o => {
+        o.paid = o.paid === true;
+        const q = pendingPaid.get(o.id);
+        if (!q) return;
+        if (o.paid === q.paid || Date.now() - q.at > PENDING_MS) pendingPaid.delete(o.id);
+        else o.paid = q.paid;
       });
       const ids = new Set(orders.map(o => o.id));
       if (known && orders.some(o => o.status === 'ใหม่' && !known.has(o.id))) beep();
@@ -434,6 +458,27 @@
     }
     const hb = e.target.closest('button[data-past]');
     if (hb) { showPast(orders.find(x => x.id === hb.dataset.past)); return; }
+    const yb = e.target.closest('button[data-pay]');
+    if (yb) {
+      // กด "รับเงินแล้ว" หรือแก้กลับ: เปลี่ยนบนจอทันที แล้วค่อยบันทึก ถ้าบันทึกไม่สำเร็จจะคืนค่าเดิม
+      const id = yb.dataset.pay, paid = yb.dataset.paid === '1';
+      const o = orders.find(x => x.id === id);
+      if (!o) return;
+      const mine = { paid, at: Date.now() };
+      pendingPaid.set(id, mine);
+      o.paid = paid; render();
+      try {
+        const data = await api({ action: 'paid', orderId: id, paid });
+        if (!data.ok) throw new Error(data.error);
+      } catch (err) {
+        if (pendingPaid.get(id) === mine) pendingPaid.delete(id);
+        const cur = orders.find(x => x.id === id);
+        if (cur && cur.paid === paid) cur.paid = !paid;
+        render();
+        setStatus('บันทึกการรับเงินไม่สำเร็จ ลองกดอีกครั้ง', true);
+      }
+      return;
+    }
     const b = e.target.closest('button[data-to]');
     if (!b) return;
     const to = b.dataset.to, id = b.dataset.id;
@@ -496,6 +541,8 @@
         <div><span>ขายไปทั้งหมด</span><b>${Number(s.qty)} ${esc(s.unit || '')}${s.free ? ' (แถมฟรี ' + Number(s.free) + ')' : ''}</b></div>
         ${s.discount ? `<div><span>ยอดก่อนหักโปร</span><b>${money(s.gross)}</b></div><div><span>ส่วนลดโปร</span><b>−${money(s.discount)}</b></div>` : ''}
         <div class="grand"><span>ยอดเงินรวม</span><b>${money(s.total)}</b></div>
+        ${s.paidOrders ? `<div><span>เก็บเงินแล้ว (${Number(s.paidOrders)} ออเดอร์)</span><b>${money(s.paid)}</b></div>
+        <div><span>ค้างเก็บ (${Number(s.unpaidOrders) || 0} ออเดอร์)</span><b>${money(s.unpaid)}</b></div>` : ''}
       </div>` +
       (s.pending ? `<p class="sum-warn">ยังมี ${Number(s.pending)} ออเดอร์ที่ยังทำไม่เสร็จ (นับรวมในยอดแล้ว)</p>` : '') +
       (s.cancelled ? `<p class="sum-warn">ยกเลิก ${Number(s.cancelled)} ออเดอร์ ไม่นับในยอด</p>` : '');
