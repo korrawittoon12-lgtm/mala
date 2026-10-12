@@ -103,7 +103,14 @@
   .card-foot .sum small { display: block; font-weight: 400; color: var(--chili-deep); }
   /* รับเงิน: ป้าย "จ่ายแล้ว" และปุ่มกดเมื่อได้รับเงิน */
   .paid-tag { display: inline-block; margin-left: .375rem; padding: 0 .5rem; border-radius: 6px; background: #1E6B3A; color: #fff; font-weight: 600; font-size: .9375rem; }
-  .pay-row { display: flex; align-items: center; gap: .5rem; padding: .5rem .75rem 0; }
+  .pay-row { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; padding: .5rem .75rem 0; }
+  /* QR ให้ลูกค้าสแกนจากหน้าจอหลังร้าน */
+  #payDlg { width: min(95vw, 30rem); padding: 1.25rem 1rem 1rem; text-align: center; }
+  #payDlg h2 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 2rem; line-height: 1.3; }
+  #payDlg .amount { margin: 0; font-size: 2.5rem; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.2; }
+  #payDlg .who { margin: .25rem 0 .75rem; color: var(--ink-soft); }
+  .pay-qr { width: fit-content; margin: .5rem auto; padding: .75rem; background: #fff; border: 1.5px solid var(--ink); border-radius: 12px; }
+  .pay-qr img, .pay-qr canvas { display: block; width: min(70vw, 18rem); height: min(70vw, 18rem); }
   .pay-row .btn { flex: 1; }
   .undo { background: none; border: 0; min-height: 2.75rem; padding: 0 .25rem; color: var(--ink-soft); text-decoration: underline; text-underline-offset: 3px; }
 </style>
@@ -148,6 +155,14 @@
   <button class="btn quiet" type="button" id="sumBack">กลับไปหน้าออเดอร์</button>
 </dialog>
 
+<dialog id="payDlg" aria-labelledby="payDlgTitle">
+  <h2 id="payDlgTitle"></h2>
+  <p class="amount" id="payDlgAmount"></p>
+  <div class="pay-qr" id="payDlgQr"></div>
+  <p class="who" id="payDlgTo"></p>
+  <div class="viewer-actions" id="payDlgActions"></div>
+</dialog>
+
 <dialog id="viewer" aria-label="รูปจากลูกค้า">
   <img id="viewerImg" alt="รูปที่ลูกค้าถ่าย">
   <div class="viewer-actions" id="viewerActions" hidden></div>
@@ -155,6 +170,7 @@
 </dialog>
 
 <script src="config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 <script>
 (() => {
   'use strict';
@@ -170,6 +186,7 @@
   let key = '';
   let orders = [];
   let known = null;           // เลขออเดอร์ที่เคยเห็นแล้ว ใช้ตัดสินว่าควรส่งเสียงเตือนไหม
+  let payTo = '';             // ข้อความบอกบัญชีพร้อมเพย์ของร้าน เช่น "บัญชีลงท้าย 3398"
   let slipsSeen = null;       // ออเดอร์ที่เคยเห็นว่ามีสลิปแล้ว ใช้ตัดสินว่าควรส่งเสียงติ๊ดเมื่อมีสลิปใหม่
   const pendingSlip = new Map();  // เลขออเดอร์ -> { state, at } ที่เพิ่งกด "สลิปไม่ถูกต้อง" บนเครื่องนี้
   let timer = null;
@@ -362,7 +379,7 @@
       ${slipHTML(o)}
       ${o.status === 'ยกเลิก' ? '' : `<div class="pay-row">${o.paid
         ? `<button class="undo" type="button" data-pay="${esc(o.id)}" data-paid="0">แก้เป็นยังไม่จ่าย</button>`
-        : `<button class="btn quiet small" type="button" data-pay="${esc(o.id)}" data-paid="1">รับเงินแล้ว ${money(o.total)}</button>`}</div>`}
+        : `<button class="btn quiet small" type="button" data-pay="${esc(o.id)}" data-paid="1">รับเงินแล้ว ${money(o.total)}</button>${o.payQr ? `<button class="btn quiet small" type="button" data-qr="${esc(o.id)}">QR ให้ลูกค้าสแกน</button>` : ''}`}</div>`}
       <div class="card-foot">
         <span class="sum">${money(o.total)}${o.paid ? '<span class="paid-tag">จ่ายแล้ว</span>' : ''}${o.discount > 0 ? `<small>หักโปรแล้ว ${money(o.discount)}</small>` : ''}</span>
         ${o.status === 'ใหม่' ? `<button class="btn quiet small" type="button" data-id="${esc(o.id)}" data-to="ยกเลิก">ยกเลิก</button>` : ''}
@@ -407,6 +424,7 @@
         throw new Error(data.error);
       }
       orders = data.orders || [];
+      payTo = typeof data.payTo === 'string' ? data.payTo : '';
       orders.forEach(o => {
         const p = pending.get(o.id);
         if (!p) return;
@@ -503,7 +521,27 @@
     if (!$('viewer').open) $('viewer').showModal();
   }
 
+  // QR จ่ายเงินของคิวนั้นแบบเต็มจอ ให้ลูกค้าสแกนจากเครื่องของร้าน แล้วกด "รับเงินแล้ว" ในหน้าเดียวกัน
+  function showPayQr(id) {
+    const o = orders.find(x => x.id === id);
+    if (!o || !o.payQr) return;
+    $('payDlgTitle').textContent = 'คิว ' + o.queue;
+    $('payDlgAmount').textContent = money(o.total);
+    $('payDlgQr').innerHTML = '';
+    let drawn = false;
+    if (typeof QRCode !== 'undefined') {
+      try { new QRCode($('payDlgQr'), { text: o.payQr, width: 512, height: 512, correctLevel: QRCode.CorrectLevel.M }); $('payDlgQr').removeAttribute('title'); drawn = true; } catch (e) {}
+    }
+    $('payDlgQr').hidden = !drawn;
+    $('payDlgTo').textContent = drawn ? 'สแกนด้วยแอปธนาคาร' + (payTo ? ' · พร้อมเพย์ ' + payTo : '') : 'โหลดตัวสร้าง QR ไม่ได้ ตรวจอินเทอร์เน็ตแล้วลองเปิดใหม่';
+    $('payDlgActions').innerHTML = `<button class="btn" type="button" data-pay="${esc(o.id)}" data-paid="1">รับเงินแล้ว ${money(o.total)}</button>
+      <button class="btn quiet" type="button">ปิด</button>`;
+    if (!$('payDlg').open) $('payDlg').showModal();
+  }
+
   async function onBoardClick(e) {
+    const qb = e.target.closest('button[data-qr]');
+    if (qb) { showPayQr(qb.dataset.qr); return; }
     const sb = e.target.closest('button[data-slip]');
     if (sb) { showSlip(sb.dataset.slip); return; }
     const xb = e.target.closest('button[data-slip-bad]');
@@ -586,6 +624,8 @@
   $('board').addEventListener('click', onBoardClick);
   // ปุ่มในหน้าดูสลิป: ปิดรูปแล้วทำแบบเดียวกับปุ่มบนการ์ด
   $('viewerActions').addEventListener('click', e => { if (e.target.closest('button')) { $('viewer').close(); onBoardClick(e); } });
+  $('payDlgActions').addEventListener('click', e => { if (e.target.closest('button')) { $('payDlg').close(); onBoardClick(e); } });
+  $('payDlg').addEventListener('click', e => { if (e.target === $('payDlg')) $('payDlg').close(); });
 
   // ประวัติการสั่งของลูกค้า LINE เจ้าของออเดอร์นี้ (สูงสุด 10 ครั้งล่าสุด)
   const thaiDate = iso => { const d = new Date(iso + 'T00:00:00'); return isNaN(d) ? '' : d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' }); };
