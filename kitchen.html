@@ -64,6 +64,12 @@
   .card-photo img { display: block; width: 100%; height: 9rem; object-fit: cover; }
   .photo-wait { margin: .5rem .75rem; padding: .75rem; border: 1.5px dashed var(--celadon-line); border-radius: 10px; color: var(--ink-soft); }
   .photo-more { padding: .5rem .75rem 0; }
+  /* สลิปที่ลูกค้าแนบ: เหลือง = รอตรวจ, แดง = สลิปซ้ำหรือไม่ผ่าน */
+  .slip-row { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .5rem; margin: .5rem .75rem 0; padding: .375rem .625rem; border-radius: 8px; background: #FFF6D6; }
+  .slip-row span { flex: 1 1 9rem; font-weight: 600; }
+  .slip-row.is-warn { background: #FBE3E4; color: var(--chili-deep); }
+  .viewer-actions { display: flex; gap: .5rem; margin-bottom: .5rem; }
+  .viewer-actions .btn { flex: 1; }
   dialog { border: 0; border-radius: 16px; padding: .75rem; max-width: min(95vw, 60rem); background: var(--paper); color: var(--ink); }
   dialog::backdrop { background: rgb(21 37 29 / .75); }
   dialog img { display: block; max-width: 100%; max-height: 78vh; margin: 0 auto .75rem; border-radius: 10px; }
@@ -144,6 +150,7 @@
 
 <dialog id="viewer" aria-label="รูปจากลูกค้า">
   <img id="viewerImg" alt="รูปที่ลูกค้าถ่าย">
+  <div class="viewer-actions" id="viewerActions" hidden></div>
   <button class="btn quiet" type="button" id="viewerClose">ปิดรูป</button>
 </dialog>
 
@@ -163,6 +170,8 @@
   let key = '';
   let orders = [];
   let known = null;           // เลขออเดอร์ที่เคยเห็นแล้ว ใช้ตัดสินว่าควรส่งเสียงเตือนไหม
+  let slipsSeen = null;       // ออเดอร์ที่เคยเห็นว่ามีสลิปแล้ว ใช้ตัดสินว่าควรส่งเสียงติ๊ดเมื่อมีสลิปใหม่
+  const pendingSlip = new Map();  // เลขออเดอร์ -> { state, at } ที่เพิ่งกด "สลิปไม่ถูกต้อง" บนเครื่องนี้
   let timer = null;
   let busy = false;
   let audio = null;
@@ -188,6 +197,7 @@
     '<text x="320" y="390" text-anchor="middle" font-family="sans-serif" font-size="26" fill="#15251D">รูปตัวอย่าง</text></svg>');
   const demo = [
     { id: 'demo-001', queue: '001', time: '12:01', table: '', customer: 'คุณเอ', phone: '0812345678', visits: 3, hasPhoto: true, spice: 'เผ็ดกลาง', note: 'ไม่ใส่ผักชี', status: 'กำลังทำ', total: 120, discount: 12,
+      slip: { has: true, state: 'รอตรวจ', dup: false },
       lines: [{ name: 'หมูสไลซ์', qty: 5 }, { name: 'เห็ดเข็มทอง', qty: 3 }, { name: 'ลูกชิ้นปลา', qty: 3 }] },
     { id: 'demo-002', queue: '002', time: '12:06', table: '', customer: '', phone: '0898765432', hasPhoto: true, spice: 'เผ็ดมาก', note: '', status: 'ใหม่', total: 54, discount: 0,
       lines: [{ name: 'เนื้อวัวสไลซ์', qty: 2 }, { name: 'ปลาหมึกสด', qty: 2 }] },
@@ -218,7 +228,8 @@
     if (!CFG.API_URL) {
       if (body.action === 'status') { const o = demo.find(x => x.id === body.orderId); if (o) o.status = body.status; return { ok: true }; }
       if (body.action === 'paid') { const o = demo.find(x => x.id === body.orderId); if (o) o.paid = body.paid === true; return { ok: true, paid: body.paid === true }; }
-      if (body.action === 'photo') return { ok: true, photo: demoPhoto };
+      if (body.action === 'photo' || body.action === 'slipPhoto') return { ok: true, photo: demoPhoto };
+      if (body.action === 'slipReject') { const o = demo.find(x => x.id === body.orderId); if (o && o.slip) { o.slip.state = 'ไม่ผ่าน'; o.paid = false; } return { ok: true }; }
       if (body.action === 'customer') return { ok: true, count: 3, orders: [
         { id: 'demo-001', date: '2026-10-10', time: '12:01', status: 'กำลังทำ', total: 120, lines: [{ name: 'หมูสไลซ์', qty: 5 }, { name: 'เห็ดเข็มทอง', qty: 3 }, { name: 'ลูกชิ้นปลา', qty: 3 }] },
         { id: 'old-2', date: '2026-10-03', time: '19:20', status: 'เสร็จแล้ว', total: 84, lines: [{ name: 'หมูสไลซ์', qty: 4 }, { name: 'ไก่หมัก', qty: 3 }] },
@@ -271,6 +282,11 @@
         return;
       } catch (e) {}
     }
+    tone();
+  }
+  // เสียงติ๊ดสั้น 2 ครั้ง: ใช้เมื่อเล่นไฟล์เสียงไม่ได้ และใช้เตือนเมื่อลูกค้าแนบสลิปใหม่
+  function tone() {
+    if (!audio) return;
     try {
       [0, 0.25].forEach(at => {
         const o = audio.createOscillator(), g = audio.createGain();
@@ -320,6 +336,16 @@
     } finally { photoBusy = false; }
   }
 
+  // แถบสลิปบนการ์ด: เห็นเมื่อลูกค้าแนบสลิปและร้านยังไม่ได้กด "รับเงินแล้ว"
+  function slipHTML(o) {
+    const sl = o.slip || {};
+    if (!sl.has || o.paid || o.status === 'ยกเลิก') return '';
+    const bad = sl.state === 'ไม่ผ่าน';
+    const text = bad ? 'สลิปไม่ผ่าน รอลูกค้าแนบใหม่' : sl.dup ? 'สลิปนี้เคยแนบกับออเดอร์อื่นแล้ว ตรวจให้ดี' : 'มีสลิป รอตรวจ';
+    return `<div class="slip-row${bad || sl.dup ? ' is-warn' : ''}"><span>${text}</span>
+      <button class="btn quiet small" type="button" data-slip="${esc(o.id)}">ดูสลิป</button></div>`;
+  }
+
   function card(o) {
     const isNum = /^\d+$/.test(o.table);
     const next = o.status === 'ใหม่' ? ['กำลังทำ', 'เริ่มทำ'] : o.status === 'กำลังทำ' ? ['เสร็จแล้ว', 'ทำเสร็จแล้ว'] : null;
@@ -333,6 +359,7 @@
       ${photoHTML(o)}
       <ul>${o.lines.map(l => `<li><span>${esc(l.name)}</span><b>× ${esc(l.qty)}</b></li>`).join('')}</ul>
       ${o.spice || o.note ? `<div class="tags">${o.spice ? `<p><span class="spice">${esc(o.spice)}</span></p>` : ''}${o.note ? `<p class="note">${esc(o.note)}</p>` : ''}</div>` : ''}
+      ${slipHTML(o)}
       ${o.status === 'ยกเลิก' ? '' : `<div class="pay-row">${o.paid
         ? `<button class="undo" type="button" data-pay="${esc(o.id)}" data-paid="0">แก้เป็นยังไม่จ่าย</button>`
         : `<button class="btn quiet small" type="button" data-pay="${esc(o.id)}" data-paid="1">รับเงินแล้ว ${money(o.total)}</button>`}</div>`}
@@ -351,7 +378,7 @@
       done: [],
     };
     // ช่อง "เสร็จแล้ว" แสดง 15 ออเดอร์ล่าสุด แต่ถ้าวันนี้ร้านใช้ปุ่ม "รับเงินแล้ว" ออเดอร์ที่เสร็จแล้วแต่ยังไม่จ่ายจะไม่หลุดจากจอ
-    const usesPay = orders.some(o => o.paid);
+    const usesPay = orders.some(o => o.paid || (o.slip && o.slip.has));
     let recent = 0;
     groups.done = orders.filter(o => o.status === 'เสร็จแล้ว' || o.status === 'ยกเลิก').reverse()
       .filter(o => (usesPay && o.status === 'เสร็จแล้ว' && !o.paid) || recent++ < 15);
@@ -393,9 +420,20 @@
         if (o.paid === q.paid || Date.now() - q.at > PENDING_MS) pendingPaid.delete(o.id);
         else o.paid = q.paid;
       });
+      orders.forEach(o => {
+        o.slip = o.slip && typeof o.slip === 'object' ? o.slip : { has: false, state: '', dup: false };
+        const q = pendingSlip.get(o.id);
+        if (!q) return;
+        if (o.slip.state === q.state || Date.now() - q.at > PENDING_MS) pendingSlip.delete(o.id);
+        else o.slip.state = q.state;
+      });
       const ids = new Set(orders.map(o => o.id));
-      if (known && orders.some(o => o.status === 'ใหม่' && !known.has(o.id))) beep();
+      const withSlip = new Set(orders.filter(o => o.slip.has && o.slip.state === 'รอตรวจ').map(o => o.id));
+      const newOrder = known && orders.some(o => o.status === 'ใหม่' && !known.has(o.id));
+      if (newOrder) beep();
+      else if (slipsSeen && [...withSlip].some(id => !slipsSeen.has(id))) tone();   // ลูกค้าเพิ่งแนบสลิป
       known = ids;
+      slipsSeen = withSlip;
       if (audio && !alertBuf) loadAlertSound();
       render();
       loadActivePhotos();
@@ -446,12 +484,56 @@
   });
   $('key').addEventListener('keydown', e => { if (e.key === 'Enter') $('startBtn').click(); });
 
-  $('board').addEventListener('click', async e => {
+  // ดูสลิป: เปิดรูปพร้อมปุ่ม "รับเงินแล้ว" และ "สลิปไม่ถูกต้อง" ให้กดได้ทันทีโดยไม่ต้องปิดรูปก่อน
+  async function showSlip(id) {
+    const o = orders.find(x => x.id === id);
+    if (!o) return;
+    let src = photos.get(id + '#slip');
+    if (!src) {
+      try {
+        const data = await api({ action: 'slipPhoto', orderId: id });
+        if (data.ok && typeof data.photo === 'string' && data.photo.startsWith('data:image/')) { src = data.photo; photos.set(id + '#slip', src); }
+      } catch (e) {}
+    }
+    if (!src) { setStatus('โหลดรูปสลิปไม่ได้ ลองกดอีกครั้ง', true); return; }
+    $('viewerImg').src = src;
+    $('viewerActions').hidden = false;
+    $('viewerActions').innerHTML = `<button class="btn" type="button" data-pay="${esc(id)}" data-paid="1">รับเงินแล้ว ${money(o.total)}</button>
+      ${o.slip.state === 'ไม่ผ่าน' ? '' : `<button class="btn quiet" type="button" data-slip-bad="${esc(id)}">สลิปไม่ถูกต้อง</button>`}`;
+    if (!$('viewer').open) $('viewer').showModal();
+  }
+
+  async function onBoardClick(e) {
+    const sb = e.target.closest('button[data-slip]');
+    if (sb) { showSlip(sb.dataset.slip); return; }
+    const xb = e.target.closest('button[data-slip-bad]');
+    if (xb) {
+      // สลิปไม่ถูกต้อง: ลูกค้าจะเห็นข้อความให้แนบใหม่ ร้านยังกด "รับเงินแล้ว" ทีหลังได้ถ้าเงินเข้าจริง
+      const id = xb.dataset.slipBad, o = orders.find(x => x.id === id);
+      if (!o || !confirm('สลิปของคิว ' + o.queue + ' ไม่ถูกต้อง ให้ลูกค้าแนบใหม่ใช่ไหม')) return;
+      const before = o.slip.state, mine = { state: 'ไม่ผ่าน', at: Date.now() };
+      pendingSlip.set(id, mine);
+      o.slip.state = 'ไม่ผ่าน'; render();
+      try {
+        const data = await api({ action: 'slipReject', orderId: id });
+        if (!data.ok) throw new Error(data.error);
+        // บันทึกแล้ว: ถือค่าที่เพิ่งกดไว้อีกแค่ราวหนึ่งรอบของการดึงออเดอร์ ถ้าลูกค้าแนบสลิปใหม่เร็ว ๆ จะได้เห็นทันที
+        mine.at = Date.now() - PENDING_MS + 12000;
+      } catch (err) {
+        if (pendingSlip.get(id) === mine) pendingSlip.delete(id);
+        const cur = orders.find(x => x.id === id);
+        if (cur && cur.slip.state === 'ไม่ผ่าน') cur.slip.state = before;
+        render();
+        setStatus('บันทึกไม่สำเร็จ ลองกดอีกครั้ง', true);
+      }
+      return;
+    }
     const pb = e.target.closest('button[data-photo]');
     if (pb) {
       const src = await loadPhoto(pb.dataset.photo);
       if (!src) { setStatus('โหลดรูปไม่ได้ ลองกดอีกครั้ง', true); render(); return; }
       $('viewerImg').src = src;
+      $('viewerActions').hidden = true;
       if (!$('viewer').open) $('viewer').showModal();
       render();
       return;
@@ -500,7 +582,10 @@
       render();
       setStatus('บันทึกสถานะไม่สำเร็จ ลองกดอีกครั้ง', true);
     }
-  });
+  }
+  $('board').addEventListener('click', onBoardClick);
+  // ปุ่มในหน้าดูสลิป: ปิดรูปแล้วทำแบบเดียวกับปุ่มบนการ์ด
+  $('viewerActions').addEventListener('click', e => { if (e.target.closest('button')) { $('viewer').close(); onBoardClick(e); } });
 
   // ประวัติการสั่งของลูกค้า LINE เจ้าของออเดอร์นี้ (สูงสุด 10 ครั้งล่าสุด)
   const thaiDate = iso => { const d = new Date(iso + 'T00:00:00'); return isNaN(d) ? '' : d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' }); };

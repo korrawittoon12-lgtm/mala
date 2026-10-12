@@ -251,6 +251,14 @@
   .pay-to { font-variant-numeric: tabular-nums; }
   .pay-how { color: var(--ink-soft); font-size: .9375rem; }
   .pay-save { margin: .25rem 0 .5rem; }
+  /* แนบสลิปหลังโอน */
+  .slip { margin: .75rem 0 0; padding: .75rem 0 0; border-top: 1px solid var(--line); }
+  .slip input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; pointer-events: none; }
+  .slip-btn { display: inline-grid; place-items: center; width: 100%; min-height: 3rem; cursor: pointer; }
+  .slip-btn.is-busy { opacity: .6; pointer-events: none; }
+  .slip-btn.quiet-btn { background: transparent; border: 1.5px solid var(--ink); color: var(--ink); }
+  .slip-msg { margin: 0 0 .5rem !important; padding: .5rem .75rem; border-radius: 10px; background: #FFF6D6; font-weight: 500; }
+  .slip-msg.is-bad { background: #FBE3E4; color: var(--red-deep); }
   /* รูป QR ที่บันทึกได้ (ใช้เมื่อเครื่องเปิดเมนูแชร์ไม่ได้ เช่น บางรุ่นของ LINE) */
   #qrSave .sheet-body { text-align: center; }
   #qrSave img { display: block; width: min(100%, 18rem); margin: .5rem auto; border: 1px solid var(--line); border-radius: 12px; -webkit-touch-callout: default; }
@@ -362,6 +370,11 @@
         <p class="pay-save" id="paySaveRow" hidden><button class="btn-line" type="button" id="paySave">บันทึกรูป QR ลงเครื่อง</button></p>
         <p class="pay-to">พร้อมเพย์ <b id="payTo"></b> ยอด <b id="payAmount"></b></p>
         <p class="pay-how" id="payHow"></p>
+        <div class="slip">
+          <p class="slip-msg" id="slipMsg" role="status" hidden></p>
+          <input id="slipInput" type="file" accept="image/*" aria-labelledby="slipBtn">
+          <label class="btn dark slip-btn" for="slipInput" id="slipBtn">โอนแล้ว แนบสลิป</label>
+        </div>
       </div>
     </div>
     <div class="sheet-foot">
@@ -909,7 +922,7 @@
       ? { qr: data.pay.qr, to: String(data.pay.to || ''), amount: Number(data.pay.amount) || 0, manual: data.pay.manual === true } : null;
     const rec = {
       id: String(data.orderId || 'demo-' + Date.now()), clientId: payload.clientId, queue: String(data.queue),
-      total: Number(data.total != null ? data.total : total), table: state.table, pay, at: Date.now(), status: 'ใหม่', paid: false, finalAt: 0,
+      total: Number(data.total != null ? data.total : total), table: state.table, pay, at: Date.now(), status: 'ใหม่', paid: false, finalAt: 0, slip: '',
     };
     tracked = [rec].concat(tracked.filter(t => t.id !== rec.id)).slice(0, TRACK_MAX);
     saveTracked();
@@ -931,6 +944,8 @@
   const STEP_TEXT = { 'ใหม่': 'ร้านรับออเดอร์แล้ว', 'กำลังทำ': 'กำลังทำ', 'เสร็จแล้ว': 'พร้อมเสิร์ฟ', 'ยกเลิก': 'ร้านยกเลิกออเดอร์นี้' };
   const DONE_TITLE = { 'ใหม่': 'ส่งออเดอร์แล้ว', 'กำลังทำ': 'กำลังทำออเดอร์', 'เสร็จแล้ว': 'พร้อมเสิร์ฟแล้ว', 'ยกเลิก': 'ออเดอร์ถูกยกเลิก' };
   const isFinal = t => t.status === 'เสร็จแล้ว' || t.status === 'ยกเลิก';
+  const SLIP_STATES = ['', 'รอตรวจ', 'ไม่ผ่าน'];
+  let slipBusy = false, slipNote = '';   // slipNote = ข้อความผิดพลาดล่าสุดตอนแนบสลิป (เช่น แนบรูป QR ผิดรูป)
   // ยังต้องถามหลังร้านต่อไหม: ออเดอร์ที่ยังไม่เสร็จ หรือเสร็จแล้วแต่ยังรอร้านกดว่าได้รับเงิน
   const stillOpen = t => !isFinal(t) || (t.status === 'เสร็จแล้ว' && !t.paid);
 
@@ -948,6 +963,7 @@
           id: t.id, clientId: t.clientId, queue: t.queue, total: Number(t.total) || 0, table: typeof t.table === 'string' ? t.table : '',
           pay: t.pay && typeof t.pay.qr === 'string' && /^[0-9A-Za-z.]{40,200}$/.test(t.pay.qr) ? { qr: t.pay.qr, to: String(t.pay.to || ''), amount: Number(t.pay.amount) || 0, manual: t.pay.manual === true } : null,
           at: Number(t.at) || 0, status: STEP_TEXT[t.status] ? t.status : 'ใหม่', paid: t.paid === true, finalAt: Number(t.finalAt) || 0,
+          slip: SLIP_STATES.includes(t.slip) ? t.slip : '',
         }));
     } catch (e) { tracked = []; }
     pruneTracked();
@@ -958,8 +974,8 @@
     $('track').hidden = !tracked.length;
     $('trackList').innerHTML = tracked.map(t => `<button class="track-row" type="button" data-track="${esc(t.id)}">
         <span class="track-q">คิว ${esc(t.queue)}</span>
-        <span class="track-s">${esc(STEP_TEXT[t.status])}${t.paid ? '<span class="paid-tag">จ่ายแล้ว</span>' : ''}</span>
-        <span class="track-go">${t.pay && !t.paid && t.status !== 'ยกเลิก' ? 'ดู QR จ่ายเงิน' : 'ดู'}</span>
+        <span class="track-s">${esc(STEP_TEXT[t.status])}${t.paid ? '<span class="paid-tag">จ่ายแล้ว</span>' : t.slip === 'รอตรวจ' ? ' · รอร้านตรวจสลิป' : t.slip === 'ไม่ผ่าน' ? ' · สลิปไม่ผ่าน' : ''}</span>
+        <span class="track-go">${t.pay && !t.paid && t.status !== 'ยกเลิก' && t.slip !== 'รอตรวจ' ? 'ดู QR จ่ายเงิน' : 'ดู'}</span>
       </button>`).join('');
   }
 
@@ -1004,6 +1020,86 @@
       ? 'จ่ายด้วยมือถือเครื่องนี้: กดบันทึกรูป QR แล้วเปิดแอปธนาคาร กดสแกน เลือกรูปจากอัลบั้ม หรือจ่ายเงินสดที่ร้านก็ได้'
       : t.pay.manual ? 'เปิดแอปธนาคาร เลือกโอนเงินแบบพร้อมเพย์ ใส่เลขและยอดด้านบน หรือจ่ายเงินสดที่ร้านก็ได้'
       : 'ยังแสดง QR ไม่ได้ ลองปิดแล้วเปิดเมนูนี้ใหม่ หรือจ่ายเงินที่ร้านได้เลย';
+    renderSlip(t);
+  }
+
+  // ส่วนแนบสลิปในกล่องจ่ายเงิน: ร้านยังต้องตรวจสลิปเองก่อนกดรับเงิน ระบบจึงแสดงว่า "รอร้านตรวจ" ไม่ได้แสดงว่าจ่ายแล้ว
+  function renderSlip(t) {
+    const msg = slipNote || (t.slip === 'รอตรวจ' ? 'ส่งสลิปแล้ว รอร้านตรวจสักครู่'
+      : t.slip === 'ไม่ผ่าน' ? 'ร้านตรวจแล้วสลิปไม่ถูกต้อง แนบสลิปใหม่ หรือแจ้งพนักงานที่ร้าน' : '');
+    $('slipMsg').textContent = msg;
+    $('slipMsg').hidden = !msg;
+    $('slipMsg').classList.toggle('is-bad', !!slipNote || t.slip === 'ไม่ผ่าน');
+    $('slipBtn').classList.toggle('is-busy', slipBusy);
+    $('slipBtn').classList.toggle('dark', !t.slip);
+    $('slipBtn').classList.toggle('quiet-btn', !!t.slip);
+    $('slipBtn').textContent = slipBusy ? 'กำลังส่งสลิป…' : t.slip === 'รอตรวจ' ? 'เปลี่ยนรูปสลิป' : t.slip === 'ไม่ผ่าน' ? 'แนบสลิปใหม่' : 'โอนแล้ว แนบสลิป';
+  }
+
+  // อ่าน QR เล็กบนสลิป (มีเลขอ้างอิงรายการโอน) เพื่อให้ร้านรู้ถ้าสลิปเดียวกันถูกใช้ซ้ำ อ่านไม่ได้ก็ยังส่งสลิปได้ตามปกติ
+  let jsQrLoading = null;
+  function loadJsQr() {
+    if (window.jsQR) return Promise.resolve();
+    jsQrLoading = jsQrLoading || new Promise((ok, no) => {
+      const el = document.createElement('script');
+      el.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
+      el.onload = ok; el.onerror = () => { jsQrLoading = null; no(new Error('jsQR')); };
+      document.head.appendChild(el);
+    });
+    return jsQrLoading;
+  }
+  async function readSlipQr(file) {
+    const url = URL.createObjectURL(file);
+    try {
+      const img = await new Promise((ok, no) => { const el = new Image(); el.onload = () => ok(el); el.onerror = no; el.src = url; });
+      const scale = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(img.naturalWidth * scale)); c.height = Math.max(1, Math.round(img.naturalHeight * scale));
+      const g = c.getContext('2d');
+      g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+      let texts = [];
+      if ('BarcodeDetector' in window) {
+        try { texts = (await new BarcodeDetector({ formats: ['qr_code'] }).detect(c)).map(x => String(x.rawValue || '')); } catch (e) {}
+      }
+      if (!texts.length) {
+        await loadJsQr();
+        const found = window.jsQR(g.getImageData(0, 0, c.width, c.height).data, c.width, c.height, { inversionAttempts: 'dontInvert' });
+        if (found && found.data) texts = [String(found.data)];
+      }
+      texts = texts.map(x => x.replace(/[^0-9A-Za-z]/g, '')).filter(Boolean);
+      return { ref: texts.find(x => x.indexOf('000201') !== 0) || '', payQr: texts.length > 0 && texts.every(x => x.indexOf('000201') === 0) };
+    } catch (e) {
+      return { ref: '', payQr: false };
+    } finally { URL.revokeObjectURL(url); }
+  }
+  const withTimeout = (p, ms, fallback) => Promise.race([p, new Promise(ok => setTimeout(() => ok(fallback), ms))]);
+
+  async function onSlipPicked(e) {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    const t = tracked.find(x => x.id === viewing);
+    if (!file || !t || slipBusy) return;
+    slipBusy = true; slipNote = ''; renderSlip(t);
+    let data = null;
+    try {
+      const [photo, qr] = await Promise.all([shrinkPhoto(file), withTimeout(readSlipQr(file), 6000, { ref: '', payQr: false })]);
+      if (qr.payQr) data = { ok: false, error: 'รูปนี้เป็น QR สำหรับจ่ายเงิน ยังไม่ใช่สลิป แนบรูปสลิปที่ได้หลังโอนเสร็จ' };
+      else if (!CFG.API_URL) { await new Promise(r => setTimeout(r, 300)); data = { ok: true, paid: false, slip: 'รอตรวจ' }; }
+      else data = await api({ action: 'slip', orderId: t.id, clientId: t.clientId, photo, ref: qr.ref });
+    } catch (err) {
+      data = data || { ok: false, error: 'อ่านรูปนี้ไม่ได้ ลองเลือกรูปสลิปใหม่' };
+    }
+    slipBusy = false;
+    if (!data || !data.ok) slipNote = (data && data.error) || 'ส่งสลิปไม่สำเร็จ ตรวจสัญญาณอินเทอร์เน็ตแล้วลองอีกครั้ง';
+    else {
+      if (data.paid === true) t.paid = true;
+      t.slip = SLIP_STATES.includes(data.slip) ? data.slip : 'รอตรวจ';
+      saveTracked();
+      startTracking();
+    }
+    renderTrack();
+    renderDone();
+    if (!t.paid) renderSlip(t);
   }
 
   // ทำรูป QR พร้อมยอดเงินเป็นไฟล์ภาพ ให้ลูกค้าบันทึกลงเครื่องแล้วเลือกสแกนจากอัลบั้มในแอปธนาคาร
@@ -1045,6 +1141,7 @@
 
   function showDone(id) {
     if (!tracked.some(t => t.id === id) || state.sending) return;
+    if (viewing !== id) slipNote = '';
     viewing = id;
     $('cartView').hidden = true;
     $('doneView').hidden = false;
@@ -1069,9 +1166,9 @@
     data.orders.forEach(o => {
       const t = tracked.find(x => x.id === String(o.orderId));
       if (!t || !STEP_TEXT[o.status]) return;
-      const paid = o.paid === true;
-      if (t.status !== o.status || t.paid !== paid) changed = true;
-      t.status = o.status; t.paid = paid;
+      const paid = o.paid === true, slip = SLIP_STATES.includes(o.slip) ? o.slip : t.slip;
+      if (t.status !== o.status || t.paid !== paid || t.slip !== slip) changed = true;
+      t.status = o.status; t.paid = paid; t.slip = slip;
       if (isFinal(t) && !t.finalAt) { t.finalAt = Date.now(); changed = true; }
     });
     if (changed) saveTracked();
@@ -1249,6 +1346,7 @@
     $('openSheet').addEventListener('click', openSheet);
     $('trackList').addEventListener('click', e => { const b = e.target.closest('[data-track]'); if (b) showDone(b.dataset.track); });
     $('paySave').addEventListener('click', saveQr);
+    $('slipInput').addEventListener('change', onSlipPicked);
     $('qrSaveClose').addEventListener('click', () => $('qrSave').close());
     $('qrSave').addEventListener('click', e => { if (e.target === $('qrSave')) $('qrSave').close(); });
     $('sheet').addEventListener('close', () => { viewing = ''; });
