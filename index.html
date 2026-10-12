@@ -223,6 +223,8 @@
   .past { margin-top: .75rem; padding: .75rem; border: 1.5px solid var(--ink); border-radius: 14px; background: #fff; }
   .past-head { display: flex; justify-content: space-between; align-items: baseline; gap: .75rem; }
   .past-head b { font-weight: 600; }
+  .past-q { font-weight: 800; font-style: italic; font-size: 1.25rem; }
+  .past-when { margin: .125rem 0 0; font-size: .9375rem; font-weight: 500; }
   .past-status { font-size: .875rem; color: var(--ink-soft); white-space: nowrap; }
   .past-status.is-cancel { color: var(--red-deep); }
   .past-items { margin: .375rem 0 .625rem; color: var(--ink-soft); }
@@ -974,6 +976,8 @@
     tracked = [rec].concat(tracked.filter(t => t.id !== rec.id)).slice(0, TRACK_MAX);
     saveTracked();
     state.cart = {}; state.note = ''; state.clientId = '';
+    state.photo = '';            // ออเดอร์ถัดไปต้องถ่ายรูปใหม่ ไม่ใช้รูปของออเดอร์ที่ส่งไปแล้ว
+    renderPhoto();
     saveCart();
     renderMenu();
     renderBar();
@@ -1249,10 +1253,12 @@
     const more = count > past.orders.length ? `<small>แสดง ${past.orders.length} ครั้งล่าสุด</small>` : '';
     $('historyList').innerHTML = `<p class="past-sum">สั่งมาแล้ว ${Number(count)} ครั้ง${more}</p>` +
       past.orders.map((o, n) => {
+        const when = thaiDate(o.date) + (o.time ? ' ' + o.time + ' น.' : '');
         const canAgain = o.lines.some(l => { const m = state.menu.find(x => x.name === l.name); return m && m.available; });
         return `<article class="past">
-          <div class="past-head"><b>${esc(thaiDate(o.date))}${o.time ? ' ' + esc(o.time) + ' น.' : ''}</b>
+          <div class="past-head"><b>${o.queue ? '<span class="past-q">คิว ' + esc(o.queue) + '</span>' : esc(when)}</b>
             <span class="past-status${o.status === 'ยกเลิก' ? ' is-cancel' : ''}">${esc(STATUS_TEXT[o.status] || '')}</span></div>
+          ${o.queue ? '<p class="past-when">' + esc(when) + '</p>' : ''}
           <p class="past-items">${o.lines.map(l => esc(l.name) + ' × ' + esc(l.qty)).join(', ')}</p>
           <div class="past-foot"><span>${money(o.total)}</span>
             ${canAgain ? `<button class="btn dark" type="button" data-again="${n}">สั่งแบบเดิม</button>` : '<small>ไม่มีขายแล้ว</small>'}</div>
@@ -1277,7 +1283,8 @@
       return;
     }
     past.orders = data.orders.map(o => ({
-      id: String(o.id), date: String(o.date || ''), time: String(o.time || ''), status: String(o.status || ''),
+      id: String(o.id), queue: (/-(\d{3,})$/.exec(String(o.id)) || [])[1] || '',   // เลขออเดอร์ "261012-006" -> คิว 006
+      date: String(o.date || ''), time: String(o.time || ''), status: String(o.status || ''),
       total: Number(o.total) || 0,
       lines: (Array.isArray(o.lines) ? o.lines : []).map(l => ({ name: String(l.name), qty: Math.floor(Number(l.qty)) || 0 })).filter(l => l.qty > 0),
     }));
