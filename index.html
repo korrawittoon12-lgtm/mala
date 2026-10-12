@@ -250,6 +250,10 @@
   .pay-qr img, .pay-qr canvas { display: block; width: 13rem; height: 13rem; max-width: 100%; }
   .pay-to { font-variant-numeric: tabular-nums; }
   .pay-how { color: var(--ink-soft); font-size: .9375rem; }
+  .pay-save { margin: .25rem 0 .5rem; }
+  /* รูป QR ที่บันทึกได้ (ใช้เมื่อเครื่องเปิดเมนูแชร์ไม่ได้ เช่น บางรุ่นของ LINE) */
+  #qrSave .sheet-body { text-align: center; }
+  #qrSave img { display: block; width: min(100%, 18rem); margin: .5rem auto; border: 1px solid var(--line); border-radius: 12px; -webkit-touch-callout: default; }
   /* แถบ "ออเดอร์ของคุณ" ใต้หัวร้าน: เห็นสถานะได้แม้ปิดแล้วเปิดเมนูใหม่ */
   .track { background: var(--paper); border-block: 1px solid var(--line); }
   .track .wrap { padding: .25rem 1rem; }
@@ -348,13 +352,14 @@
       <ol class="steps" id="doneSteps" aria-label="สถานะออเดอร์">
         <li data-step="ใหม่">รับออเดอร์แล้ว</li>
         <li data-step="กำลังทำ">กำลังทำ</li>
-        <li data-step="เสร็จแล้ว"><span><span class="nw">เสร็จแล้ว</span> <span class="nw">มารับได้</span></span></li>
+        <li data-step="เสร็จแล้ว">พร้อมเสิร์ฟ</li>
       </ol>
       <p class="cancelled" id="doneCancelled" hidden>ร้านยกเลิกออเดอร์นี้ สอบถามที่ร้านได้เลย</p>
       <p>ยอดที่ต้องจ่าย <b id="doneTotal"></b><span class="paid-tag" id="donePaid" hidden>จ่ายแล้ว</span></p>
       <div class="pay" id="payBox" hidden>
         <p class="pay-title">สแกนจ่ายด้วยพร้อมเพย์</p>
         <div class="pay-qr" id="payQr"></div>
+        <p class="pay-save" id="paySaveRow" hidden><button class="btn-line" type="button" id="paySave">บันทึกรูป QR ลงเครื่อง</button></p>
         <p class="pay-to">พร้อมเพย์ <b id="payTo"></b> ยอด <b id="payAmount"></b></p>
         <p class="pay-how" id="payHow"></p>
       </div>
@@ -362,6 +367,18 @@
     <div class="sheet-foot">
       <button class="btn red" type="button" data-close>สั่งเพิ่ม</button>
     </div>
+  </div>
+</dialog>
+
+<dialog id="qrSave" aria-labelledby="qrSaveTitle">
+  <div class="sheet-head">
+    <h2 id="qrSaveTitle">บันทึกรูป QR</h2>
+    <button class="linklike" type="button" id="qrSaveClose">ปิด</button>
+  </div>
+  <div class="sheet-body">
+    <p>กดค้างที่รูป แล้วเลือก "บันทึกรูปภาพ"</p>
+    <img id="qrSaveImg" alt="QR จ่ายเงินพร้อมยอด">
+    <p class="pay-how">จากนั้นเปิดแอปธนาคาร กดสแกน แล้วเลือกรูปนี้จากอัลบั้ม</p>
   </div>
 </dialog>
 
@@ -911,8 +928,8 @@
   let viewing = '';       // เลขออเดอร์ที่กำลังเปิดดูอยู่ในแผ่น
   let qrShownFor = '';    // วาด QR ของออเดอร์ไหนไว้แล้ว จะได้ไม่วาดซ้ำทุกครั้งที่สถานะอัปเดต
   let trackTimer = 0, trackBusy = false;
-  const STEP_TEXT = { 'ใหม่': 'ร้านรับออเดอร์แล้ว', 'กำลังทำ': 'กำลังทำ', 'เสร็จแล้ว': 'เสร็จแล้ว มารับได้', 'ยกเลิก': 'ร้านยกเลิกออเดอร์นี้' };
-  const DONE_TITLE = { 'ใหม่': 'ส่งออเดอร์แล้ว', 'กำลังทำ': 'กำลังทำออเดอร์', 'เสร็จแล้ว': 'เสร็จแล้ว มารับได้', 'ยกเลิก': 'ออเดอร์ถูกยกเลิก' };
+  const STEP_TEXT = { 'ใหม่': 'ร้านรับออเดอร์แล้ว', 'กำลังทำ': 'กำลังทำ', 'เสร็จแล้ว': 'พร้อมเสิร์ฟ', 'ยกเลิก': 'ร้านยกเลิกออเดอร์นี้' };
+  const DONE_TITLE = { 'ใหม่': 'ส่งออเดอร์แล้ว', 'กำลังทำ': 'กำลังทำออเดอร์', 'เสร็จแล้ว': 'พร้อมเสิร์ฟแล้ว', 'ยกเลิก': 'ออเดอร์ถูกยกเลิก' };
   const isFinal = t => t.status === 'เสร็จแล้ว' || t.status === 'ยกเลิก';
   // ยังต้องถามหลังร้านต่อไหม: ออเดอร์ที่ยังไม่เสร็จ หรือเสร็จแล้วแต่ยังรอร้านกดว่าได้รับเงิน
   const stillOpen = t => !isFinal(t) || (t.status === 'เสร็จแล้ว' && !t.paid);
@@ -982,10 +999,48 @@
     }
     const hasQr = qrShownFor === t.id;
     $('payQr').hidden = !hasQr;
+    $('paySaveRow').hidden = !hasQr;
     $('payHow').textContent = hasQr
-      ? 'ถ้าใช้มือถือเครื่องเดียว ให้แคปหน้าจอนี้ แล้วเปิดแอปธนาคาร เลือกสแกนจากรูปภาพ หรือจ่ายเงินสดที่ร้านก็ได้'
+      ? 'จ่ายด้วยมือถือเครื่องนี้: กดบันทึกรูป QR แล้วเปิดแอปธนาคาร กดสแกน เลือกรูปจากอัลบั้ม หรือจ่ายเงินสดที่ร้านก็ได้'
       : t.pay.manual ? 'เปิดแอปธนาคาร เลือกโอนเงินแบบพร้อมเพย์ ใส่เลขและยอดด้านบน หรือจ่ายเงินสดที่ร้านก็ได้'
       : 'ยังแสดง QR ไม่ได้ ลองปิดแล้วเปิดเมนูนี้ใหม่ หรือจ่ายเงินที่ร้านได้เลย';
+  }
+
+  // ทำรูป QR พร้อมยอดเงินเป็นไฟล์ภาพ ให้ลูกค้าบันทึกลงเครื่องแล้วเลือกสแกนจากอัลบั้มในแอปธนาคาร
+  // เครื่องที่มีเมนูแชร์ (iPhone, Android ส่วนใหญ่) จะขึ้นเมนูให้กด "บันทึกรูปภาพ" ได้เลย ถ้าไม่มี จะเปิดรูปให้กดค้างเพื่อบันทึก
+  function qrImageFor(t) {
+    const src = $('payQr').querySelector('canvas');
+    if (!src) return null;
+    const W = 640, Q = 520, c = document.createElement('canvas');
+    c.width = W; c.height = 760;
+    const g = c.getContext('2d');
+    g.fillStyle = '#fff'; g.fillRect(0, 0, W, c.height);
+    g.imageSmoothingEnabled = false;
+    g.drawImage(src, (W - Q) / 2, 60, Q, Q);
+    g.fillStyle = '#141210'; g.textAlign = 'center';
+    g.font = '600 34px Kanit, "Noto Sans Thai", sans-serif';
+    g.fillText(CFG.SHOP_NAME + '  คิว ' + t.queue, W / 2, 640);
+    g.font = '800 44px Kanit, "Noto Sans Thai", sans-serif';
+    g.fillText('ยอด ' + money(t.pay.amount), W / 2, 700);
+    return c;
+  }
+  async function saveQr() {
+    const t = tracked.find(x => x.id === viewing);
+    const c = t && t.pay && qrImageFor(t);
+    if (!c) return;
+    const name = 'จ่าย-' + CFG.SHOP_NAME + '-คิว' + t.queue + '.png';
+    try {
+      const blob = await new Promise(ok => c.toBlob(ok, 'image/png'));
+      const file = blob && new File([blob], name, { type: 'image/png' });
+      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file] });
+        return;
+      }
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;   // ลูกค้ากดยกเลิกเมนูแชร์เอง
+    }
+    $('qrSaveImg').src = c.toDataURL('image/png');
+    if (!$('qrSave').open) $('qrSave').showModal();
   }
 
   function showDone(id) {
@@ -1193,6 +1248,9 @@
     });
     $('openSheet').addEventListener('click', openSheet);
     $('trackList').addEventListener('click', e => { const b = e.target.closest('[data-track]'); if (b) showDone(b.dataset.track); });
+    $('paySave').addEventListener('click', saveQr);
+    $('qrSaveClose').addEventListener('click', () => $('qrSave').close());
+    $('qrSave').addEventListener('click', e => { if (e.target === $('qrSave')) $('qrSave').close(); });
     $('sheet').addEventListener('close', () => { viewing = ''; });
     document.addEventListener('visibilitychange', () => { if (!document.hidden && tracked.some(stillOpen)) pollTrack(); });
     $('openHistory').addEventListener('click', openHistory);
