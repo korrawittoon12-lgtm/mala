@@ -177,7 +177,7 @@
   // ALERT_SOUND = ไฟล์เสียงที่เล่นเมื่อมีออเดอร์ใหม่ (วางไว้ข้างไฟล์นี้) ALERT_TIMES = เล่นกี่รอบต่อหนึ่งออเดอร์
   // จะเปลี่ยนเสียง: เอาไฟล์ใหม่มาแทนโดยใช้ชื่อเดิม หรือใส่ชื่อไฟล์ใหม่ใน config.js ถ้าใส่ '' จะใช้เสียงติ๊ดแบบเดิม
   const CFG = Object.assign({ API_URL: '', ALERT_SOUND: 'alert.mp3', ALERT_TIMES: 2 }, window.SHOP_CONFIG || {});
-  const POLL_MS = 10000;      // ถามหาออเดอร์ใหม่ทุก 10 วินาที
+  const POLL_MS = 3000;       // ถามหาออเดอร์ใหม่ทุก 3 วินาที (ถ้ารอบก่อนยังไม่ตอบ จะข้ามไปรอบถัดไป ไม่ถามซ้อน)
   const KEY_STORE = 'mala-staff-key';
   const $ = id => document.getElementById(id);
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
