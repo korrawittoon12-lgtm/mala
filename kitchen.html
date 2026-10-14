@@ -53,6 +53,11 @@
   .card ul { list-style: none; margin: 0; padding: .5rem .75rem; }
   .card li { display: flex; justify-content: space-between; gap: .75rem; padding: .125rem 0; font-size: 1.125rem; }
   .card li b { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  /* รายการยาว: ย่อเหลือ 5 บรรทัด กดปุ่มเพื่อดูทั้งหมด */
+  .card ul.is-short { padding-bottom: 0; }
+  .lines-toggle { display: flex; justify-content: space-between; align-items: center; gap: .5rem; width: calc(100% - 1.5rem); margin: .25rem .75rem .5rem; padding: .5rem .75rem;
+    border: 1.5px dashed var(--ink-soft, #5E564B); border-radius: 10px; background: transparent; color: inherit; font: inherit; font-weight: 600; cursor: pointer; }
+  .lines-toggle .arrow { font-size: .875rem; }
   .tags { padding: 0 .75rem .5rem; }
   .tags p { margin: .25rem 0 0; }
   .spice { display: inline-block; background: var(--chili); color: #fff; border-radius: 6px; padding: 0 .5rem; font-weight: 600; }
@@ -188,6 +193,8 @@
   let known = null;           // เลขออเดอร์ที่เคยเห็นแล้ว ใช้ตัดสินว่าควรส่งเสียงเตือนไหม
   let payTo = '';             // ข้อความบอกบัญชีพร้อมเพย์ของร้าน เช่น "บัญชีลงท้าย 3398"
   let slipsSeen = null;       // ออเดอร์ที่เคยเห็นว่ามีสลิปแล้ว ใช้ตัดสินว่าควรส่งเสียงติ๊ดเมื่อมีสลิปใหม่
+  const EXPANDED_KEY = 'mala-kitchen-expanded';
+  const expanded = new Set((() => { try { return JSON.parse(localStorage.getItem(EXPANDED_KEY) || '[]'); } catch (e) { return []; } })());   // การ์ดที่กางรายการไว้
   const pendingSlip = new Map();  // เลขออเดอร์ -> { state, at } ที่เพิ่งกด "สลิปไม่ถูกต้อง" บนเครื่องนี้
   let timer = null;
   let busy = false;
@@ -363,6 +370,23 @@
       <button class="btn quiet small" type="button" data-slip="${esc(o.id)}">ดูสลิป</button></div>`;
   }
 
+  // รายการในการ์ด: ถ้าเกิน 6 รายการ ย่อเหลือ 5 รายการแรก และมีปุ่ม "ดูทั้งหมด / ย่อ" (จำไว้ในเครื่องนี้ แม้หน้าจอรีเฟรชเอง)
+  const LINES_SHORT = 5, LINES_LONG = 6;
+  function linesHTML(o) {
+    const long = o.lines.length > LINES_LONG, open = !long || expanded.has(o.id);
+    const shown = open ? o.lines : o.lines.slice(0, LINES_SHORT);
+    const sticks = o.lines.reduce((a, l) => a + (Number(l.qty) || 0), 0);
+    const list = `<ul${open ? '' : ' class="is-short"'}>${shown.map(l => `<li><span>${esc(l.name)}</span><b>× ${esc(l.qty)}</b></li>`).join('')}</ul>`;
+    if (!long) return list;
+    return list + `<button class="lines-toggle" type="button" data-lines="${esc(o.id)}" aria-expanded="${open}">
+      <span>${open ? 'ย่อรายการ' : 'ดูทั้งหมด ' + o.lines.length + ' รายการ (อีก ' + (o.lines.length - LINES_SHORT) + ')'} · รวม ${sticks} ไม้</span><span class="arrow" aria-hidden="true">${open ? '▲' : '▼'}</span></button>`;
+  }
+  function toggleLines(id) {
+    if (expanded.has(id)) expanded.delete(id); else expanded.add(id);
+    try { localStorage.setItem(EXPANDED_KEY, JSON.stringify([...expanded].slice(-50))); } catch (e) {}
+    render();
+  }
+
   function card(o) {
     const isNum = /^\d+$/.test(o.table);
     const next = o.status === 'ใหม่' ? ['กำลังทำ', 'เริ่มทำ'] : o.status === 'กำลังทำ' ? ['เสร็จแล้ว', 'ทำเสร็จแล้ว'] : null;
@@ -374,7 +398,7 @@
       ${o.phone ? `<p class="contact"><a href="tel:${esc(o.phone)}">โทร ${esc(showPhone(o.phone))}</a></p>` : ''}
       ${o.visits > 0 ? `<button class="regular" type="button" data-past="${esc(o.id)}">ลูกค้าเก่า เคยสั่ง ${esc(o.visits)} ครั้ง ดูประวัติ</button>` : ''}
       ${photoHTML(o)}
-      <ul>${o.lines.map(l => `<li><span>${esc(l.name)}</span><b>× ${esc(l.qty)}</b></li>`).join('')}</ul>
+      ${linesHTML(o)}
       ${o.spice || o.note ? `<div class="tags">${o.spice ? `<p><span class="spice">${esc(o.spice)}</span></p>` : ''}${o.note ? `<p class="note">${esc(o.note)}</p>` : ''}</div>` : ''}
       ${slipHTML(o)}
       ${o.status === 'ยกเลิก' ? '' : `<div class="pay-row">${o.paid
@@ -540,6 +564,8 @@
   }
 
   async function onBoardClick(e) {
+    const lt = e.target.closest('button[data-lines]');
+    if (lt) { toggleLines(lt.dataset.lines); return; }
     const qb = e.target.closest('button[data-qr]');
     if (qb) { showPayQr(qb.dataset.qr); return; }
     const sb = e.target.closest('button[data-slip]');
