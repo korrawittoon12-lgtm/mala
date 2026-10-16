@@ -221,6 +221,30 @@
   #photoInput:focus-visible + .photo-btn { outline: 3px solid var(--ink); outline-offset: 2px; }
   .sheet-foot { padding: .75rem 1rem calc(.75rem + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); }
   .error { margin: 0 0 .75rem; padding: .625rem .75rem; border-radius: 10px; background: #FBE3E4; color: var(--red-deep); font-weight: 500; }
+  /* หน้าจอระหว่างส่งออเดอร์: บังแผ่นทั้งแผ่น ลูกค้าเห็นว่าระบบกำลังทำงาน และกดอะไรซ้ำไม่ได้ */
+  .sending { position: absolute; inset: 0; z-index: 5; display: grid; place-content: center; justify-items: center; gap: .75rem;
+    padding: 1.5rem; text-align: center; background: rgb(255 253 248 / .96); }
+  .sending-grill { width: 7.5rem; height: 5rem; }
+  .sending-grill .stick { stroke: #8B6A43; stroke-width: 3; stroke-linecap: round; }
+  .sending-grill .meat { fill: var(--red); }
+  .sending-grill .meat.b { fill: #D9822B; }
+  .sending-grill .bar { stroke: var(--ink); stroke-width: 3; stroke-linecap: round; }
+  .sending-grill .flame { fill: #F6B73C; }
+  .sending-title { margin: 0; font-family: var(--display); font-size: 1.75rem; line-height: 1.3; }
+  .sending-step { margin: 0; min-height: 1.5em; color: var(--ink-soft); font-weight: 500; }
+  .sending-bar { width: min(16rem, 80vw); height: .625rem; border-radius: 99px; background: var(--line); overflow: hidden; }
+  .sending-fill { height: 100%; width: 0; border-radius: inherit; transition: width .4s ease-out;
+    background: repeating-linear-gradient(-45deg, var(--red) 0 10px, #D2353A 10px 20px); background-size: 34px 100%; }
+  .sending-hint { margin: 0; color: var(--ink-soft); font-size: .875rem; }
+  @media (prefers-reduced-motion: no-preference) {
+    .sending-fill { animation: prog-run .8s linear infinite; }
+    .sending-grill .sk { animation: sk-bob 1.2s ease-in-out infinite; transform-box: fill-box; }
+    .sending-grill .sk:nth-of-type(2) { animation-delay: .2s; }
+    .sending-grill .sk:nth-of-type(3) { animation-delay: .4s; }
+    .sending-grill .flame { animation: prog-flicker .5s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 100%; }
+    .sending-grill .flame:nth-of-type(odd) { animation-duration: .65s; }
+  }
+  @keyframes sk-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 
   /* แผ่น "ที่เคยสั่ง" */
   .past-who { margin: 0; color: var(--ink-soft); font-size: .9375rem; }
@@ -388,6 +412,21 @@
       <p class="error" id="error" role="alert" hidden></p>
       <button class="btn red" id="send" type="button">ส่งออเดอร์</button>
     </div>
+    <div class="sending" id="sending" role="status" aria-live="polite" hidden>
+      <svg class="sending-grill" viewBox="0 0 120 80" aria-hidden="true">
+        <g class="sk"><line class="stick" x1="30" y1="6" x2="30" y2="52"/><rect class="meat" x="23" y="12" width="14" height="10" rx="3"/><rect class="meat b" x="23" y="25" width="14" height="10" rx="3"/><rect class="meat" x="23" y="38" width="14" height="10" rx="3"/></g>
+        <g class="sk"><line class="stick" x1="60" y1="6" x2="60" y2="52"/><rect class="meat b" x="53" y="12" width="14" height="10" rx="3"/><rect class="meat" x="53" y="25" width="14" height="10" rx="3"/><rect class="meat b" x="53" y="38" width="14" height="10" rx="3"/></g>
+        <g class="sk"><line class="stick" x1="90" y1="6" x2="90" y2="52"/><rect class="meat" x="83" y="12" width="14" height="10" rx="3"/><rect class="meat b" x="83" y="25" width="14" height="10" rx="3"/><rect class="meat" x="83" y="38" width="14" height="10" rx="3"/></g>
+        <line class="bar" x1="10" y1="58" x2="110" y2="58"/>
+        <path class="flame" d="M22 76c-6 0-8-6-4-11 1 3 3 4 4 2 0-4 3-6 5-8 0 4 4 6 3 11-1 4-4 6-8 6z"/>
+        <path class="flame" d="M52 76c-6 0-8-6-4-11 1 3 3 4 4 2 0-4 3-6 5-8 0 4 4 6 3 11-1 4-4 6-8 6z"/>
+        <path class="flame" d="M82 76c-6 0-8-6-4-11 1 3 3 4 4 2 0-4 3-6 5-8 0 4 4 6 3 11-1 4-4 6-8 6z"/>
+      </svg>
+      <p class="sending-title">กำลังส่งออเดอร์</p>
+      <p class="sending-step" id="sendingStep">กำลังส่งรายการและรูป…</p>
+      <div class="sending-bar"><div class="sending-fill" id="sendingFill"></div></div>
+      <p class="sending-hint">อย่าเพิ่งปิดหน้านี้</p>
+    </div>
   </div>
 
   <div id="doneView" hidden>
@@ -466,8 +505,8 @@
   const MAX_QTY = 50;
   const CART_KEY = 'mala-cart-v1';
   const CART_MAX_AGE = 6 * 60 * 60 * 1000; // ลืมตะกร้าที่ค้างเกิน 6 ชั่วโมง
-  const PHOTO_MAX_SIDE = 1280;             // ย่อรูปให้ด้านยาวไม่เกินเท่านี้ก่อนส่ง จะได้ส่งเร็วและไม่เปลืองเน็ตลูกค้า
-  const PHOTO_QUALITY = 0.7;
+  const PHOTO_MAX_SIDE = 1024;             // ย่อรูปให้ด้านยาวไม่เกินเท่านี้ก่อนส่ง จะได้ส่งเร็วและไม่เปลืองเน็ตลูกค้า
+  const PHOTO_QUALITY = 0.62;           // รูปเล็กลงราวครึ่งหนึ่ง ส่งไวขึ้นบนเน็ตมือถือ ยังเห็นโต๊ะชัด
   const CLOSED_TEXT = 'วันนี้ร้านปิดรับออเดอร์แล้ว ขอบคุณที่อุดหนุน';
   const TRACK_KEY = 'mala-orders-v1';
   const TRACK_MAX = 3;                         // จำออเดอร์ล่าสุดของเครื่องนี้ไม่เกินเท่านี้
@@ -833,6 +872,7 @@
   function renderClosed() { $('closedNote').hidden = !state.closed; }
   function openSheet() {
     if (!cartCount()) return;
+    warmBackend();
     viewing = '';
     $('cartView').hidden = false;
     $('doneView').hidden = true;
@@ -930,6 +970,40 @@
     }
   }
 
+  // หน้าจอระหว่างส่ง: ข้อความเปลี่ยนไปตามเวลาที่รอ และแถบวิ่งเข้าใกล้เต็มเรื่อย ๆ จนหลังร้านตอบกลับ
+  // (หลังร้านไม่ได้บอกว่าถึงขั้นไหน จึงเดาจากเวลาที่ใช้ตามปกติ: ส่งรูป ~1-2 วินาที บันทึก ~2-3 วินาที)
+  const SENDING_STEPS = [
+    [0, 'กำลังส่งรายการและรูป…'],
+    [1800, 'ร้านกำลังบันทึกออเดอร์…'],
+    [4500, 'กำลังออกเลขคิว ใกล้เสร็จแล้ว…'],
+    [10000, 'เน็ตช้านิดหน่อย รอสักครู่…'],
+  ];
+  let sendingTimer = 0;
+  function showSending(on) {
+    clearInterval(sendingTimer);
+    $('sending').hidden = !on;
+    if (!on) return;
+    const start = Date.now();
+    const tick = () => {
+      const ms = Date.now() - start;
+      let text = SENDING_STEPS[0][1];
+      SENDING_STEPS.forEach(([at, t]) => { if (ms >= at) text = t; });
+      if ($('sendingStep').textContent !== text) $('sendingStep').textContent = text;
+      $('sendingFill').style.width = Math.round(92 * (1 - Math.exp(-ms / 3500))) + '%';
+    };
+    $('sendingFill').style.width = '0';
+    tick();
+    sendingTimer = setInterval(tick, 300);
+  }
+
+  // ปลุกหลังร้านไว้ก่อนตอนลูกค้าเปิดแผ่นสรุป (Google ตอบครั้งแรกช้ากว่าครั้งถัดไป) ระหว่างที่ลูกค้ากรอกเบอร์และถ่ายรูป
+  let warmedAt = 0;
+  function warmBackend() {
+    if (!CFG.API_URL || Date.now() - warmedAt < 60000) return;
+    warmedAt = Date.now();
+    fetch(CFG.API_URL + '?action=ping', { cache: 'no-store' }).catch(() => {});
+  }
+
   async function sendOrder() {
     if (state.sending) return;
     // หุบคีย์บอร์ดก่อนส่ง จะได้เห็นปุ่มและข้อความแจ้งผลเต็มจอ
@@ -972,6 +1046,7 @@
     state.sending = true;
     showError('');
     renderSheet();
+    showSending(true);
     let data;
     try {
       if (CFG.API_URL) data = await api(payload);
@@ -980,6 +1055,7 @@
       data = null;
     }
     state.sending = false;
+    showSending(false);
 
     if (!data) {
       renderSheet();
@@ -1440,6 +1516,9 @@
     'รูปที่ถ่ายไว้': 'Your photo', 'ร้านยกเลิกออเดอร์นี้ สอบถามที่ร้านได้เลย': 'The shop cancelled this order. Please ask our staff.',
     [CLOSED_TEXT]: 'Sorry, we are not taking orders for the rest of today. Thank you!',
     'สั่งเพิ่ม': 'Order more', 'สแกนจ่ายด้วยพร้อมเพย์': 'Scan to pay with PromptPay', 'ส่งออเดอร์': 'Send order', 'กำลังส่ง…': 'Sending…',
+    'กำลังส่งออเดอร์': 'Sending your order', 'กำลังส่งรายการและรูป…': 'Sending your items and photo…',
+    'ร้านกำลังบันทึกออเดอร์…': 'The shop is saving your order…', 'กำลังออกเลขคิว ใกล้เสร็จแล้ว…': 'Getting your queue number, almost done…',
+    'เน็ตช้านิดหน่อย รอสักครู่…': 'Slow connection, please wait…', 'อย่าเพิ่งปิดหน้านี้': "Please don't close this page",
     'ส่งออเดอร์แล้ว': 'Order sent', 'กำลังทำออเดอร์': 'Cooking your order', 'พร้อมเสิร์ฟแล้ว': 'Your order is ready!', 'ออเดอร์ถูกยกเลิก': 'Order cancelled',
     'เข้าสู่ระบบด้วย LINE เพื่อดูที่เคยสั่ง': 'Log in with LINE to see past orders', 'เบอร์โทร': 'Phone number', 'เมนู': 'Menu',
     'เลือกของที่อยากกิน': 'Pick what you like,', 'ใส่จำนวน': 'choose how many,', 'แล้วกดส่งออเดอร์': 'then send your order',
