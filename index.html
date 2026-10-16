@@ -51,6 +51,9 @@
     font-size: .6875rem; letter-spacing: .3em; line-height: 1.8;
     padding-bottom: .375rem; border-bottom: 2px solid var(--red);
   }
+  .hero-right { display: flex; align-items: flex-start; gap: .75rem; }
+  .lang-btn { min-width: 2.75rem; min-height: 2.75rem; padding: 0 .75rem; border: 1.5px solid var(--ink); border-radius: 999px;
+    background: var(--paper); color: var(--ink); font: 600 .9375rem/1 var(--body); letter-spacing: .04em; }
   .table-note {
     margin: 0; font-family: var(--note); font-size: 1.375rem; line-height: 1.3;
     transform: rotate(-5deg); padding: 0 .25rem .125rem; border-bottom: 3px solid var(--red);
@@ -315,7 +318,10 @@
   <div class="wrap">
     <div class="hero-top">
       <p class="motto">Mala street food<br>good mood</p>
-      <p class="table-note" id="plaque" hidden></p>
+      <div class="hero-right">
+        <p class="table-note" id="plaque" hidden></p>
+        <button class="lang-btn" id="langBtn" type="button" lang="en" aria-label="Switch to English">EN</button>
+      </div>
     </div>
     <h1><svg class="flame" viewBox="0 0 64 80" aria-hidden="true"><path fill="#B01116" d="M33 3C37 18 53 27 53 49 53 65 44 77 32 77 20 77 11 65 11 49 11 39 17 32 20 23 22 30 24 34 27 36 29 26 29 14 33 3Z"/><path fill="#F28C1B" d="M32 29C35 40 45 45 45 57 45 67 39 73 32 73 25 73 19 67 19 57 19 51 22 46 24 42 25 45 27 48 29 49 30 42 30 36 32 29Z"/><path fill="#FFFDF8" d="M32 50C34 55 38 58 38 64 38 69 35 72 32 72 29 72 26 69 26 64 26 59 30 56 32 50Z"/></svg><span id="shopName"></span></h1>
     <p class="brush price-banner" id="priceBanner" hidden></p>
@@ -1396,6 +1402,174 @@
     sn.append(name.slice(0, start), at, name.slice(tone ? tone.index + 1 : end));
   }
 
+  // ---------- เปลี่ยนภาษา ไทย / English ----------
+  // หน้าเว็บสร้างข้อความเป็นภาษาไทยเหมือนเดิม แล้วตัวแปลด้านล่างเปลี่ยนข้อความบนจอเป็นอังกฤษเมื่อเลือก EN
+  // ข้อมูลที่ส่งไปหลังร้าน (ชื่อเมนู ความเผ็ด) ยังเป็นภาษาไทยเสมอ หลังร้านจึงอ่านได้เหมือนเดิม
+  const LANG_KEY = 'mala-lang';
+  const MENU_EN = {
+    'เนื้อสัตว์': 'Meat', 'ไส้กรอกและเต้าหู้': 'Sausage & Tofu', 'ผักและเห็ด': 'Veggies & Mushrooms', 'ซีฟู้ด': 'Seafood',
+    'หมึกย่าง': 'Grilled squid', 'ลูกชิ้นและเต้าหู้': 'Balls & Tofu', 'เครื่องดื่ม': 'Drinks', 'อื่นๆ': 'Others',
+    'สามชั้นเสียบไม้': 'Pork belly', 'หมูสันคอเสียบไม้': 'Pork collar', 'สันในไก่เสียบไม้': 'Chicken tenderloin', 'หมึกกรอบ': 'Crispy squid',
+    'ปลาดอลลี่': 'Dory fish', 'ท้องปลาแซลมอน': 'Salmon belly', 'ท้องปลาแซลมอล': 'Salmon belly', 'เอ็นเต้ไก่': 'Chicken cartilage',
+    'ไส้กรอกแดง': 'Red sausage', 'โบโลน่า แผ่นกลม': 'Bologna (round)', 'ปูอัดเมก้า': 'Jumbo crab stick', 'ไส้กรอกชีส': 'Cheese sausage',
+    'แฮมหมู แผ่นกลม': 'Pork ham (round)', 'เต้าหู้ชีส': 'Cheese tofu', 'ไส้กรอกนม': 'Milk sausage', 'เต้าหู้ปลา': 'Fish tofu',
+    'แฮมเบคอน': 'Bacon ham', 'ฟองเต้าหู้สามเหลี่ยม': 'Tofu skin triangles', 'ไส้กรอกไก่กรอบ': 'Crispy chicken sausage',
+    'เห็ดเข็มทองพันสามชั้น': 'Enoki wrapped in pork belly', 'บร็อคโคลี่': 'Broccoli', 'บลอคโคลี': 'Broccoli', 'บรอกโคลี': 'Broccoli',
+    'กระเจี๊ยบ': 'Okra', 'เห็ดเออรินจิ': 'King oyster mushroom', 'เห็ดออรินจิ': 'King oyster mushroom', 'เห็ดออริลจิ': 'King oyster mushroom',
+    'ข้าวโพดอ่อน': 'Baby corn', 'คางปลาหมึก': 'Squid head', 'ปลาหมึกสาย': 'Baby octopus', 'ปลาหมึกเมก้า': 'Jumbo squid',
+    'หอยแครงเสียบไม้': 'Blood cockles', 'หมูสไลซ์': 'Sliced pork', 'สันคอหมู': 'Pork collar', 'เนื้อวัวสไลซ์': 'Sliced beef',
+    'ไก่หมัก': 'Marinated chicken', 'ปลาหมึกสด': 'Fresh squid', 'ลูกชิ้นหมู': 'Pork balls', 'ลูกชิ้นปลา': 'Fish balls', 'ปูอัด': 'Crab stick',
+    'ฟองเต้าหู้': 'Tofu skin', 'ผักบุ้ง': 'Morning glory', 'กะหล่ำปลี': 'Cabbage', 'เห็ดเข็มทอง': 'Enoki mushroom',
+    'น้ำเปล่า': 'Water', 'น้ำอัดลม': 'Soft drink', 'โค้ก': 'Coke', 'ชาเย็น': 'Thai iced tea', 'น้ำแข็ง': 'Ice', 'ข้าวสวย': 'Steamed rice',
+  };
+  const UNIT_EN = { 'ไม้': ['stick', 'sticks'], 'ชิ้น': ['item', 'items'], 'ขวด': ['bottle', 'bottles'], 'แก้ว': ['glass', 'glasses'] };
+  const unitEn = (u, n) => { const w = UNIT_EN[u] || ['item', 'items']; return Number(n) === 1 ? w[0] : w[1]; };
+  const nameEn = n => MENU_EN[n] || n;
+  const MONTH_EN = { 'ม.ค.': 'Jan', 'ก.พ.': 'Feb', 'มี.ค.': 'Mar', 'เม.ย.': 'Apr', 'พ.ค.': 'May', 'มิ.ย.': 'Jun', 'ก.ค.': 'Jul', 'ส.ค.': 'Aug', 'ก.ย.': 'Sep', 'ต.ค.': 'Oct', 'พ.ย.': 'Nov', 'ธ.ค.': 'Dec' };
+  const TH_EN = {
+    'กดค้างที่รูป แล้วเลือก "บันทึกรูปภาพ"': 'Press and hold the picture, then choose "Save Image"',
+    'จากนั้นเปิดแอปธนาคาร กดสแกน แล้วเลือกรูปนี้จากอัลบั้ม': 'Then open your banking app, tap Scan and pick this picture from your photos',
+    'กำลังโหลดเมนู…': 'Loading menu…', 'กำลังโหลด…': 'Loading…', 'คิวที่': 'Queue no.', 'จ่ายแล้ว': 'Paid',
+    'ดูที่เคยสั่ง แล้วสั่งแบบเดิม': 'See past orders & order again', 'ดูรายการที่สั่ง': 'View my order', 'ถ่ายรูป': 'Take photo', 'ถ่ายใหม่': 'Retake',
+    'กำลังเตรียมรูป…': 'Preparing photo…', 'ที่เคยสั่ง': 'Past orders', 'บอกร้านเพิ่มเติม (ไม่ใส่ก็ได้)': 'Notes for the shop (optional)',
+    'เช่น ไม่ใส่ผักชี แพ้ถั่ว': 'e.g. no coriander, nut allergy', 'บันทึกรูป QR': 'Save QR image', 'บันทึกรูป QR ลงเครื่อง': 'Save QR to phone',
+    'ปิด': 'Close', 'พร้อมเพย์': 'PromptPay', 'ยอด': 'Amount', 'ยอดที่ต้องจ่าย': 'Total to pay', 'ระดับความเผ็ด': 'Spice level',
+    'รับออเดอร์แล้ว': 'Received', 'กำลังทำ': 'Cooking', 'พร้อมเสิร์ฟ': 'Ready', 'เสร็จแล้ว': 'Done', 'ยกเลิก': 'Cancelled',
+    'ร้านรับออเดอร์แล้ว': 'Order received', 'ร้านยกเลิกออเดอร์นี้': 'The shop cancelled this order',
+    'รายการที่สั่ง': 'Your order', 'เลือกเพิ่ม': 'Add more', 'รูปโต๊ะหรือบริเวณรอบข้าง': 'Photo of your table or spot',
+    'รูปที่ถ่ายไว้': 'Your photo', 'ร้านยกเลิกออเดอร์นี้ สอบถามที่ร้านได้เลย': 'The shop cancelled this order. Please ask our staff.',
+    [CLOSED_TEXT]: 'Sorry, we are not taking orders for the rest of today. Thank you!',
+    'สั่งเพิ่ม': 'Order more', 'สแกนจ่ายด้วยพร้อมเพย์': 'Scan to pay with PromptPay', 'ส่งออเดอร์': 'Send order', 'กำลังส่ง…': 'Sending…',
+    'ส่งออเดอร์แล้ว': 'Order sent', 'กำลังทำออเดอร์': 'Cooking your order', 'พร้อมเสิร์ฟแล้ว': 'Your order is ready!', 'ออเดอร์ถูกยกเลิก': 'Order cancelled',
+    'เข้าสู่ระบบด้วย LINE เพื่อดูที่เคยสั่ง': 'Log in with LINE to see past orders', 'เบอร์โทร': 'Phone number', 'เมนู': 'Menu',
+    'เลือกของที่อยากกิน': 'Pick what you like,', 'ใส่จำนวน': 'choose how many,', 'แล้วกดส่งออเดอร์': 'then send your order',
+    'โหมดทดลอง: ออเดอร์ยังไม่ถูกส่งไปที่ร้าน': 'Demo mode: orders are not sent to the shop',
+    'โอนแล้ว แนบสลิป': 'Paid? Attach slip', 'กำลังส่งสลิป…': 'Sending slip…', 'เปลี่ยนรูปสลิป': 'Change slip', 'แนบสลิปใหม่': 'Attach a new slip',
+    'ส่งสลิปแล้ว รอร้านตรวจสักครู่': 'Slip sent. The shop will check it shortly.',
+    'ร้านตรวจแล้วสลิปไม่ถูกต้อง แนบสลิปใหม่ หรือแจ้งพนักงานที่ร้าน': 'The shop could not accept this slip. Attach a new one or tell our staff.',
+    'รูปนี้เป็น QR สำหรับจ่ายเงิน ยังไม่ใช่สลิป แนบรูปสลิปที่ได้หลังโอนเสร็จ': 'This picture is the payment QR, not a slip. Attach the slip you get after paying.',
+    'อ่านรูปนี้ไม่ได้ ลองเลือกรูปสลิปใหม่': 'Could not read this picture. Try another slip picture.',
+    'ส่งสลิปไม่สำเร็จ ตรวจสัญญาณอินเทอร์เน็ตแล้วลองอีกครั้ง': 'Could not send the slip. Check your internet and try again.',
+    'จ่ายด้วยมือถือเครื่องนี้: กดบันทึกรูป QR แล้วเปิดแอปธนาคาร กดสแกน เลือกรูปจากอัลบั้ม หรือจ่ายเงินสดที่ร้านก็ได้': 'Paying on this phone: save the QR, open your banking app, tap Scan and pick it from your photos. Or pay cash at the shop.',
+    'เปิดแอปธนาคาร เลือกโอนเงินแบบพร้อมเพย์ ใส่เลขและยอดด้านบน หรือจ่ายเงินสดที่ร้านก็ได้': 'Open your banking app, choose a PromptPay transfer and enter the number and amount above. Or pay cash at the shop.',
+    'ยังแสดง QR ไม่ได้ ลองปิดแล้วเปิดเมนูนี้ใหม่ หรือจ่ายเงินที่ร้านได้เลย': 'The QR cannot be shown yet. Close and reopen the menu, or pay at the shop.',
+    'ใส่จำนวน ': 'Choose how many', 'หมด': 'Sold out', 'ไม่ร่วมโปร': 'not in promo', 'สั่งแบบเดิม': 'Order again', 'ไม่มีขายแล้ว': 'No longer sold',
+    'ร้านยังไม่ได้ใส่เมนู': 'The menu is not ready yet', 'โหลดเมนูไม่ได้ ตรวจสัญญาณอินเทอร์เน็ตแล้วลองอีกครั้ง': 'Could not load the menu. Check your internet and try again.',
+    'โหลดเมนูอีกครั้ง': 'Reload menu', 'ใส่เบอร์โทรก่อนส่งออเดอร์': 'Please enter your phone number first',
+    'เบอร์โทรไม่ถูกต้อง ใส่ตัวเลข 9 ถึง 10 หลัก ขึ้นต้นด้วย 0': 'Phone number looks wrong. Enter 9–10 digits starting with 0.',
+    'ถ่ายรูปโต๊ะหรือบริเวณรอบข้างก่อนส่งออเดอร์': 'Please take a photo of your table or spot first',
+    'เลือกระดับความเผ็ดก่อนส่งออเดอร์': 'Please choose a spice level first',
+    'ส่งออเดอร์ไม่สำเร็จ รายการที่เลือกยังอยู่ครบ กดส่งอีกครั้งได้เลย': 'Could not send the order. Your items are still here, just tap send again.',
+    'ส่งออเดอร์ไม่สำเร็จ ลองอีกครั้ง': 'Could not send the order. Please try again.',
+    'อ่านรูปนี้ไม่ได้ ลองถ่ายใหม่อีกครั้ง': 'Could not read this photo. Please take it again.',
+    'ยังไม่เคยสั่งกับร้านนี้ผ่าน LINE': 'No orders with us on LINE yet', 'ดูประวัติไม่ได้ ตรวจสัญญาณอินเทอร์เน็ตแล้วลองอีกครั้ง': 'Could not load past orders. Check your internet and try again.',
+    'รายการในออเดอร์นี้ไม่มีขายแล้ว': 'The items in this order are no longer sold',
+    'เปลี่ยนรายการที่เลือกไว้ เป็นรายการของออเดอร์นี้ใช่ไหม': 'Replace your current items with the items from this order?',
+    'ตัวอย่างประวัติ (โหมดทดลอง)': 'Sample history (demo mode)', 'ดู': 'View', 'ดู QR จ่ายเงิน': 'Show payment QR',
+    'ยังไม่ได้แนบรูป หรือรูปใหญ่เกินไป ลองถ่ายใหม่อีกครั้ง': 'No photo attached, or it is too large. Please take it again.',
+    'เปิดเมนูนี้จากในแอป LINE อีกครั้ง แล้วจะดูที่เคยสั่งได้': 'Open this menu from the LINE app again to see past orders.',
+    'ระบบขัดข้องชั่วคราว ลองอีกครั้ง': 'Something went wrong. Please try again.', 'ไม่พบออเดอร์นี้': 'Order not found',
+    'ออเดอร์นี้ถูกยกเลิกแล้ว': 'This order was cancelled', 'อ่านรูปสลิปไม่ได้ ลองเลือกรูปใหม่อีกครั้ง': 'Could not read the slip. Please pick it again.',
+    'สถานะออเดอร์': 'Order status', 'หมวดเมนู': 'Menu categories', 'ออเดอร์ของคุณ': 'Your order', 'QR จ่ายเงินพร้อมยอด': 'Payment QR with amount',
+    'กลับบ้าน': 'Takeaway', 'รอร้านตรวจสลิป': 'slip being checked', 'สลิปไม่ผ่าน': 'slip not accepted', 'ไม่เผ็ด': 'Not spicy', 'เผ็ดน้อย': 'Mild',
+    'เผ็ดกลาง': 'Medium', 'เผ็ดมาก': 'Hot', 'ไม้': 'sticks', 'บาท': 'THB',
+  };
+  const TH_RULES = [
+    [/^คิว (\S+)$/, m => 'Queue ' + m[1]],
+    [/^โต๊ะ (.+)$/, m => 'Table ' + m[1]],
+    [/^ส่งออเดอร์ (฿[\d,.]+)$/, m => 'Send order ' + m[1]],
+    [/^เลือกแล้ว (\d+) (\S+?)(?: \(ฟรี (\d+)\))?$/, m => m[1] + ' ' + unitEn(m[2], m[1]) + ' selected' + (m[3] ? ' (' + m[3] + ' free)' : '')],
+    [/^(฿[\d,.]+) ต่อ(\S+)$/, m => m[1] + ' / ' + unitEn(m[2], 1)],
+    [/^(\S+)ละ$/, m => 'Per ' + unitEn(m[1], 1)],
+    [/^ซื้อ (\d+)$/, m => 'Buy ' + m[1]],
+    [/^ฟรี (\d+)$/, m => 'get ' + m[1] + ' FREE'],
+    [/^เลือกเพิ่มได้อีก (\d+) (\S+) ฟรี$/, m => 'Pick ' + m[1] + ' more ' + unitEn(m[2], m[1]) + ' for free'],
+    [/^(?:ได้ฟรี (\d+) (\S+?)แล้ว ?)?(?:อีก (\d+) (\S+) ได้ฟรี(เพิ่ม)? (\d+) (\S+))?$/, m => (m[1] || m[3]) ? [
+      m[1] ? m[1] + ' ' + unitEn(m[2], m[1]) + ' free!' : '',
+      m[3] ? m[3] + ' more for ' + (m[5] ? 'another ' : '') + m[6] + ' free' : ''].filter(Boolean).join(' ') : null],
+    [/^โปรซื้อ (\d+) ฟรี (\d+) \(ฟรี (\d+) (\S+)\)$/, m => 'Buy ' + m[1] + ' get ' + m[2] + ' free (' + m[3] + ' ' + unitEn(m[4], m[3]) + ' free)'],
+    [/^ของหมดแล้ว: (.+) เอาออกจากรายการให้แล้ว$/, m => 'Sold out: ' + m[1].split(', ').map(nameEn).join(', ') + '. Removed from your order.'],
+    [/^ตอนนี้ไม่มีขาย: (.+) ส่วนรายการที่เหลือใส่ให้แล้ว$/, m => 'Not available now: ' + m[1].split(', ').map(nameEn).join(', ') + '. The rest were added.'],
+    [/^ออเดอร์ที่สั่งด้วยบัญชี LINE ของ (.+)$/, m => 'Orders from the LINE account of ' + m[1]],
+    [/^สั่งมาแล้ว (\d+) ครั้ง$/, m => m[1] + (m[1] === '1' ? ' order' : ' orders') + ' so far'],
+    [/^แสดง (\d+) ครั้งล่าสุด$/, m => 'showing the latest ' + m[1]],
+    [/^(\d{1,2}) (\S+\.\S*\.) (\d{2})(?: (\d{1,2}:\d{2}) น\.)?$/, m => MONTH_EN[m[2]] ? m[1] + ' ' + MONTH_EN[m[2]] + ' ' + (Number(m[3]) + 1957) + (m[4] ? ' ' + m[4] : '') : null],
+    [/^เพิ่ม (.+)$/, m => 'Add ' + nameEn(m[1])],
+    [/^ลด (.+)$/, m => 'Remove ' + nameEn(m[1])],
+    [/^(.+) จำนวน (\d+)$/, m => nameEn(m[1]) + ', quantity ' + m[2]],
+    [/^สั่งได้ไม่เกิน (\d+) ต่อรายการ$/, m => 'Up to ' + m[1] + ' per item'],
+    [/^เมนู (.+)$/, m => m[1] + ' Menu'],
+  ];
+  function trEn(s) {
+    if (TH_EN[s] != null) return TH_EN[s];
+    if (MENU_EN[s]) return MENU_EN[s];
+    for (const [re, fn] of TH_RULES) { const m = re.exec(s); if (m) { const out = fn(m); if (out != null) return out; } }
+    // "หมูสไลซ์ × 6, ไก่หมัก × 3" (ประวัติการสั่ง)
+    if (/ × \d+/.test(s)) return s.split(', ').map(x => x.replace(/^(.+) × (\d+)$/, (a, n, q) => nameEn(n) + ' × ' + q)).join(', ');
+    // "กำลังทำ · รอร้านตรวจสลิป"
+    if (s.includes(' · ')) { const parts = s.split(' · '); const tr = parts.map(p => TH_EN[p] || MENU_EN[p]); if (tr.every(Boolean)) return tr.join(' · '); }
+    return null;
+  }
+  const HAS_TH = /[฀-๿]/;
+  const NO_TR = el => el && el.closest && el.closest('#shopName, script, style, textarea');
+  function trText(node) {
+    const v = node.nodeValue;
+    if (!v || !HAS_TH.test(v) || NO_TR(node.parentElement)) return;
+    const key = v.trim(), out = trEn(key);
+    if (out != null && out !== key) node.nodeValue = v.replace(key, out);
+  }
+  const TR_ATTRS = ['placeholder', 'aria-label', 'alt', 'title'];
+  function trEl(el) {
+    if (el.closest && el.closest('#shopName')) return;
+    TR_ATTRS.forEach(a => {
+      const v = el.getAttribute(a);
+      if (v && HAS_TH.test(v)) { const out = trEn(v.trim()); if (out != null) el.setAttribute(a, out); }
+    });
+  }
+  function trTree(root) {
+    if (root.nodeType === 3) { trText(root); return; }
+    if (root.nodeType !== 1) return;
+    trEl(root);
+    root.querySelectorAll('*').forEach(trEl);
+    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let n; while ((n = w.nextNode())) trText(n);
+  }
+  let lang = 'th', langObs = null;
+  function readLang() {
+    try { const v = localStorage.getItem(LANG_KEY); if (v === 'th' || v === 'en') return v; } catch (e) {}
+    return /^th\b/i.test(navigator.language || 'th') ? 'th' : 'en';   // เครื่องที่ไม่ได้ตั้งภาษาไทย เปิดมาเป็นอังกฤษ
+  }
+  function applyLang() {
+    document.documentElement.lang = lang;
+    $('langBtn').textContent = lang === 'en' ? 'ไทย' : 'EN';
+    $('langBtn').setAttribute('aria-label', lang === 'en' ? 'เปลี่ยนเป็นภาษาไทย' : 'Switch to English');
+    if (lang !== 'en') return;
+    trTree(document.body);
+    document.title = trEn(document.title) || document.title;
+    if (!langObs) {
+      langObs = new MutationObserver(list => list.forEach(r => {
+        if (r.type === 'characterData') trText(r.target);
+        else if (r.type === 'attributes') trEl(r.target);
+        else r.addedNodes.forEach(trTree);
+      }));
+      langObs.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: TR_ATTRS });
+    }
+  }
+  function initLang() {
+    lang = readLang();
+    // กล่องถาม/แจ้งเตือนของเบราว์เซอร์ก็แปลด้วย
+    const ask = window.confirm.bind(window), tell = window.alert.bind(window);
+    window.confirm = m => ask(lang === 'en' ? (trEn(String(m)) || m) : m);
+    window.alert = m => tell(lang === 'en' ? (trEn(String(m)) || m) : m);
+    $('langBtn').addEventListener('click', () => {
+      const next = lang === 'en' ? 'th' : 'en';
+      try { localStorage.setItem(LANG_KEY, next); } catch (e) {}
+      if (next === 'th') { saveCart(); location.reload(); return; }   // กลับเป็นไทย: โหลดหน้าใหม่ รายการที่เลือกไว้ยังอยู่
+      lang = next; applyLang();
+    });
+    applyLang();
+  }
+
   // ---------- เริ่มทำงาน ----------
   function start() {
     renderShopName();
@@ -1404,6 +1578,7 @@
 
     $('spice').innerHTML = SPICE_LEVELS.map(s =>
       `<label><input type="radio" name="spice" value="${s}"><span>${s}</span></label>`).join('');
+    initLang();
 
     const qrTable = readTableParam();
     if (qrTable) setTable(qrTable, true);
