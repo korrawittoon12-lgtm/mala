@@ -328,6 +328,24 @@
   .track-row + .track-row { border-top: 1px solid var(--line); }
   .track-q { font-weight: 800; font-style: italic; font-size: 1.25rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
   .track-s { flex: 1; }
+  /* ปุ่มปิดแผ่น "ส่งออเดอร์แล้ว" */
+  .close-x { position: absolute; top: .5rem; right: .5rem; z-index: 2; display: grid; place-items: center; width: 2.75rem; height: 2.75rem; padding: 0;
+    border: 0; border-radius: 50%; background: var(--cream); color: var(--ink); font-size: 1.375rem; line-height: 1; cursor: pointer; }
+  .foot-two { display: flex; gap: .5rem; }
+  .foot-two .btn { flex: 1; width: auto; }
+  .btn.ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--ink); min-height: 3.5rem; font-size: 1.125rem; }
+  /* ป๊อปอัปตอนกดสั่ง: บอกว่าอีกกี่ไม้จะได้แถม */
+  #dealPop { margin: auto; width: min(92vw, 22rem); max-height: none; border-radius: 20px; padding: 1.25rem 1.25rem 1rem; text-align: center; }
+  #dealPop[open] { display: block; }
+  .deal-title { margin: .25rem 0 .375rem; font-family: var(--display); font-weight: 400; font-size: 1.75rem; line-height: 1.35; color: var(--red-deep); }
+  .deal-sub { margin: 0 0 .875rem; color: var(--ink-soft); }
+  .deal-dots { display: flex; flex-wrap: wrap; justify-content: center; gap: .3125rem; margin: 0 auto .875rem; max-width: 17rem; padding: 0; list-style: none; }
+  .deal-dots li { width: 1.25rem; height: 1.25rem; border-radius: 50%; border: 2px solid var(--line); background: var(--paper); }
+  .deal-dots li.on { background: var(--red); border-color: var(--red); }
+  .deal-dots li.gift { border-color: #D9A21B; border-style: dashed; }
+  .deal-dots li.gift.on { background: #F6B73C; border-style: solid; }
+  .deal-actions { display: flex; flex-direction: column; gap: .5rem; }
+  .deal-actions .btn { width: 100%; min-height: 3.25rem; font-size: 1.0625rem; }
   .track-a { display: block; color: var(--red-deep); font-size: .875rem; font-weight: 600; }
   .ahead { margin: .25rem 0 .75rem; padding: .5rem .75rem; border-radius: 10px; background: #FFF6D6; font-weight: 600; font-size: 1.0625rem; }
   .track-go { text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
@@ -432,6 +450,7 @@
   </div>
 
   <div id="doneView" hidden>
+    <button class="close-x" type="button" data-close aria-label="ปิดหน้านี้">✕</button>
     <div class="done">
       <h2 id="doneTitle">ส่งออเดอร์แล้ว</h2>
       <div class="queue brush"><small>คิวที่</small><b id="doneQueue"></b></div>
@@ -460,9 +479,20 @@
         </div>
       </div>
     </div>
-    <div class="sheet-foot">
+    <div class="sheet-foot foot-two">
+      <button class="btn ghost" type="button" data-close>ปิดหน้านี้</button>
       <button class="btn red" type="button" data-close>สั่งเพิ่ม</button>
     </div>
+  </div>
+</dialog>
+
+<dialog id="dealPop" aria-labelledby="dealTitle">
+  <p class="deal-title" id="dealTitle"></p>
+  <ul class="deal-dots" id="dealDots" aria-hidden="true"></ul>
+  <p class="deal-sub" id="dealSub"></p>
+  <div class="deal-actions">
+    <button class="btn red" type="button" id="dealMore">เลือกเพิ่ม</button>
+    <button class="btn ghost" type="button" id="dealGo">ไปสั่งเลย</button>
   </div>
 </dialog>
 
@@ -873,6 +903,29 @@
     $('error').hidden = !msg;
   }
   function renderClosed() { $('closedNote').hidden = !state.closed; }
+  // กดปุ่มดูรายการที่สั่ง: ถ้ายังไม่ครบโปร (หรือได้ฟรีแล้วแต่ยังไม่ได้เลือก) ขึ้นป๊อปอัปบอกก่อน 1 ครั้งต่อจำนวนไม้นั้น
+  // ลูกค้ากด "เลือกเพิ่ม" กลับไปหน้าเมนู หรือ "ไปสั่งเลย" ไปหน้าสรุปตามปกติ
+  let dealShownFor = -1;
+  function dealNudge() {
+    if (!promoOn()) return null;
+    const { n } = promoInfo();
+    const { buy, free } = state.promo, group = buy + free, unit = promoUnit();
+    const r = n % group;
+    if (!n || r === 0 || dealShownFor === n) return null;
+    if (r >= buy) return { n, r, buy, group, title: `เลือกเพิ่มได้อีก ${group - r} ${unit} ฟรี`, sub: 'ไม่ต้องจ่ายเพิ่ม เลือกเมนูที่ชอบได้เลย' };
+    return { n, r, buy, group, title: `อีก ${buy - r} ${unit} ได้ฟรี ${free} ${unit}`, sub: `เลือกแล้ว ${r} จาก ${buy} ${unit}` };
+  }
+  function openOrder() {
+    const d = dealNudge();
+    if (!d) { openSheet(); return; }
+    dealShownFor = d.n;
+    $('dealTitle').textContent = d.title;
+    $('dealSub').textContent = d.sub;
+    $('dealDots').innerHTML = d.group <= 24 ? Array.from({ length: d.group }, (_, k) =>
+      `<li class="${k >= d.buy ? 'gift' : ''}${k < d.r ? ' on' : ''}"></li>`).join('') : '';
+    $('dealPop').showModal();
+  }
+
   function openSheet() {
     if (!cartCount()) return;
     warmBackend();
@@ -1530,7 +1583,8 @@
     'รูปที่ถ่ายไว้': 'Your photo', 'ร้านยกเลิกออเดอร์นี้ สอบถามที่ร้านได้เลย': 'The shop cancelled this order. Please ask our staff.',
     [CLOSED_TEXT]: 'Sorry, we are not taking orders for the rest of today. Thank you!',
     'สั่งเพิ่ม': 'Order more', 'สแกนจ่ายด้วยพร้อมเพย์': 'Scan to pay with PromptPay', 'ส่งออเดอร์': 'Send order', 'กำลังส่ง…': 'Sending…',
-    'เบอร์โทร (ไม่ใส่ก็ได้)': 'Phone (optional)', 'คิวถัดไปคือคุณ': "You're next", 'กำลังส่งออเดอร์': 'Sending your order', 'กำลังส่งรายการและรูป…': 'Sending your items and photo…',
+    'เบอร์โทร (ไม่ใส่ก็ได้)': 'Phone (optional)', 'คิวถัดไปคือคุณ': "You're next", 'ไปสั่งเลย': 'Continue to order', 'ปิดหน้านี้': 'Close',
+    'ไม่ต้องจ่ายเพิ่ม เลือกเมนูที่ชอบได้เลย': 'No extra charge, pick anything you like', 'กำลังส่งออเดอร์': 'Sending your order', 'กำลังส่งรายการและรูป…': 'Sending your items and photo…',
     'ร้านกำลังบันทึกออเดอร์…': 'The shop is saving your order…', 'กำลังออกเลขคิว ใกล้เสร็จแล้ว…': 'Getting your queue number, almost done…',
     'เน็ตช้านิดหน่อย รอสักครู่…': 'Slow connection, please wait…', 'อย่าเพิ่งปิดหน้านี้': "Please don't close this page",
     'ส่งออเดอร์แล้ว': 'Order sent', 'กำลังทำออเดอร์': 'Cooking your order', 'พร้อมเสิร์ฟแล้ว': 'Your order is ready!', 'ออเดอร์ถูกยกเลิก': 'Order cancelled',
@@ -1569,6 +1623,7 @@
   };
   const TH_RULES = [
     [/^คิว (\S+)$/, m => 'Queue ' + m[1]],
+    [/^เลือกแล้ว (\d+) จาก (\d+) (\S+)$/, m => m[1] + ' of ' + m[2] + ' ' + unitEn(m[3], m[2]) + ' picked'],
     [/^ก่อนหน้าคุณอีก (\d+) คิว$/, m => m[1] + (m[1] === '1' ? ' order' : ' orders') + ' ahead of you'],
     [/^โต๊ะ (.+)$/, m => 'Table ' + m[1]],
     [/^ส่งออเดอร์ (฿[\d,.]+)$/, m => 'Send order ' + m[1]],
@@ -1695,7 +1750,10 @@
       }
       if (e.target.closest('[data-close]') && !state.sending) $('sheet').close();
     });
-    $('openSheet').addEventListener('click', openSheet);
+    $('openSheet').addEventListener('click', openOrder);
+    $('dealMore').addEventListener('click', () => $('dealPop').close());
+    $('dealGo').addEventListener('click', () => { $('dealPop').close(); openSheet(); });
+    $('dealPop').addEventListener('click', e => { if (e.target === $('dealPop')) $('dealPop').close(); });
     $('trackList').addEventListener('click', e => { const b = e.target.closest('[data-track]'); if (b) showDone(b.dataset.track); });
     $('paySave').addEventListener('click', saveQr);
     $('slipInput').addEventListener('change', onSlipPicked);
