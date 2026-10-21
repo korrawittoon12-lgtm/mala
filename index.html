@@ -390,7 +390,7 @@
       </fieldset>
 
       <div class="field">
-        <label for="phone">เบอร์โทร</label>
+        <label for="phone">เบอร์โทร (ไม่ใส่ก็ได้)</label>
         <input id="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="15" placeholder="08x-xxx-xxxx">
       </div>
 
@@ -1023,8 +1023,9 @@
       if (state.closed) { showError(CLOSED_TEXT); return; }
       if (!cartCount()) { $('sheet').close(); return; }
     }
-    if (!state.phone) { showError('ใส่เบอร์โทรก่อนส่งออเดอร์'); $('phone').focus(); return; }
-    if (!phone) { showError('เบอร์โทรไม่ถูกต้อง ใส่ตัวเลข 9 ถึง 10 หลัก ขึ้นต้นด้วย 0'); $('phone').focus(); return; }
+    // เบอร์โทรไม่บังคับแล้ว (ร้านขอเมื่อ 21/10/2026) ถ้าจะกลับไปบังคับ ให้ลบ // หน้าบรรทัดถัดไป
+    // if (!state.phone) { showError('ใส่เบอร์โทรก่อนส่งออเดอร์'); $('phone').focus(); return; }
+    if (state.phone && !phone) { showError('เบอร์โทรไม่ถูกต้อง ใส่ตัวเลข 9 ถึง 10 หลัก ขึ้นต้นด้วย 0'); $('phone').focus(); return; }
     if (!state.photo) { showError('ถ่ายรูปโต๊ะหรือบริเวณรอบข้างก่อนส่งออเดอร์'); $('photoBtn').scrollIntoView({ block: 'center' }); return; }
     if (needsSpice() && !state.spice) { showError('เลือกระดับความเผ็ดก่อนส่งออเดอร์'); return; }
 
@@ -1516,7 +1517,7 @@
     'รูปที่ถ่ายไว้': 'Your photo', 'ร้านยกเลิกออเดอร์นี้ สอบถามที่ร้านได้เลย': 'The shop cancelled this order. Please ask our staff.',
     [CLOSED_TEXT]: 'Sorry, we are not taking orders for the rest of today. Thank you!',
     'สั่งเพิ่ม': 'Order more', 'สแกนจ่ายด้วยพร้อมเพย์': 'Scan to pay with PromptPay', 'ส่งออเดอร์': 'Send order', 'กำลังส่ง…': 'Sending…',
-    'กำลังส่งออเดอร์': 'Sending your order', 'กำลังส่งรายการและรูป…': 'Sending your items and photo…',
+    'เบอร์โทร (ไม่ใส่ก็ได้)': 'Phone (optional)', 'กำลังส่งออเดอร์': 'Sending your order', 'กำลังส่งรายการและรูป…': 'Sending your items and photo…',
     'ร้านกำลังบันทึกออเดอร์…': 'The shop is saving your order…', 'กำลังออกเลขคิว ใกล้เสร็จแล้ว…': 'Getting your queue number, almost done…',
     'เน็ตช้านิดหน่อย รอสักครู่…': 'Slow connection, please wait…', 'อย่าเพิ่งปิดหน้านี้': "Please don't close this page",
     'ส่งออเดอร์แล้ว': 'Order sent', 'กำลังทำออเดอร์': 'Cooking your order', 'พร้อมเสิร์ฟแล้ว': 'Your order is ready!', 'ออเดอร์ถูกยกเลิก': 'Order cancelled',
