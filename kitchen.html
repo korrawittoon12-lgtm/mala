@@ -103,6 +103,36 @@
   .sum-warn { margin: .625rem 0 0; padding: .375rem .625rem; background: #FFF6D6; border-radius: 8px; }
   #sum .msg { min-height: 1.5rem; margin: .625rem 0 0; font-weight: 500; }
   #sum .btn { margin-top: .5rem; }
+  /* แท็บ วันนี้ / 7 วัน / เดือนนี้ / เดือนที่แล้ว ในแผ่นสรุปยอด */
+  .sum-tabs { display: flex; gap: .375rem; margin: .5rem 0 .75rem; overflow-x: auto; }
+  .sum-tabs button { flex: 1 0 auto; min-height: 2.5rem; padding: 0 .75rem; border: 1.5px solid var(--ink); border-radius: 999px; background: var(--paper); color: var(--ink); font: inherit; font-weight: 600; white-space: nowrap; }
+  .sum-tabs button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+  .rep-kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: .5rem; margin: 0 0 .75rem; }
+  .rep-kpis div { padding: .5rem .625rem; border-radius: 10px; background: var(--celadon); }
+  .rep-kpis small { display: block; color: var(--ink-soft); }
+  .rep-kpis b { font-size: 1.375rem; font-variant-numeric: tabular-nums; }
+  .rep-kpis .big { grid-column: 1 / -1; background: var(--ink); color: var(--paper); }
+  .rep-kpis .big small { color: #D9D2C5; }
+  .rep-kpis .big b { font-size: 1.75rem; }
+  .rep h3 { margin: 1rem 0 .375rem; font-size: 1.0625rem; }
+  .bars { margin: 0; padding: 0; list-style: none; font-variant-numeric: tabular-nums; }
+  .bars li { display: grid; grid-template-columns: 3.25rem 1fr auto; align-items: center; gap: .5rem; padding: .1875rem 0; font-size: .9375rem; }
+  .bars .bar { height: .875rem; border-radius: 4px; background: var(--chili); min-width: 2px; }
+  .bars .bar.zero { background: var(--celadon-line); }
+  .bars .bar.top { background: var(--chili-deep); }
+  .bars .val { min-width: 4.5rem; text-align: right; color: var(--ink-soft); }
+  .rep .unsold { margin: .25rem 0 0; padding: .5rem .625rem; border-radius: 8px; background: #FFF6D6; }
+  /* แผ่น ของหมด / มีขาย */
+  #stock { width: min(95vw, 34rem); max-height: 92vh; overflow-y: auto; padding: 1rem; }
+  #stock h2 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 1.5rem; }
+  #stock .who { margin: 0 0 .5rem; color: var(--ink-soft); }
+  #stock h3 { margin: .875rem 0 .25rem; font-size: 1rem; color: var(--ink-soft); }
+  .stock-row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; width: 100%; min-height: 3.25rem; padding: .375rem 0; border: 0; border-top: 1px solid var(--celadon-line); background: none; color: var(--ink); font: inherit; font-size: 1.0625rem; text-align: left; }
+  .stock-row .pill { flex: none; min-width: 5.5rem; padding: .375rem .75rem; border-radius: 999px; background: #1E6B3A; color: #fff; font-weight: 600; text-align: center; }
+  .stock-row.is-out .pill { background: var(--chili); }
+  .stock-row.is-out .name { color: var(--ink-soft); text-decoration: line-through; }
+  .stock-row.is-busy { opacity: .55; }
+  #stock .btn { margin-top: .75rem; }
   .card-foot { display: flex; gap: .5rem; padding: .625rem .75rem; border-top: 1px solid var(--celadon-line); align-items: center; }
   .card-foot .sum { flex: 1; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.3; }
   .card-foot .sum small { display: block; font-weight: 400; color: var(--chili-deep); }
@@ -126,6 +156,7 @@
   <h1>ออเดอร์หลังร้าน</h1>
   <p id="status" role="status"></p>
   <button class="btn quiet small" id="soundBtn" type="button" hidden>แตะเพื่อเปิดเสียงเตือน</button>
+  <button class="btn quiet small" id="stockBtn" type="button" hidden>ของหมด / มีขาย</button>
   <button class="btn quiet small" id="sumBtn" type="button" hidden>สรุปยอด / ปิดรับออเดอร์</button>
 </header>
 <p class="closed-bar" id="closedBar" role="status" hidden>ปิดรับออเดอร์แล้ว ลูกค้าสั่งเพิ่มไม่ได้ (เปิดรับใหม่ได้ที่ปุ่ม สรุปยอด)</p>
@@ -152,12 +183,26 @@
 
 <dialog id="sum" aria-labelledby="sumTitle">
   <h2 id="sumTitle">สรุปยอดวันนี้</h2>
+  <div class="sum-tabs" role="group" aria-label="ช่วงเวลา">
+    <button type="button" data-range="today" aria-pressed="true">วันนี้</button>
+    <button type="button" data-range="week" aria-pressed="false">7 วัน</button>
+    <button type="button" data-range="month" aria-pressed="false">เดือนนี้</button>
+    <button type="button" data-range="lastmonth" aria-pressed="false">เดือนที่แล้ว</button>
+  </div>
   <p class="who" id="sumWhen"></p>
   <div id="sumBody"></div>
   <p class="msg" id="sumMsg" role="status"></p>
   <button class="btn" type="button" id="sumShut" hidden>ปิดรับออเดอร์</button>
   <button class="btn quiet" type="button" id="sumReopen" hidden>เปิดรับออเดอร์อีกครั้ง</button>
   <button class="btn quiet" type="button" id="sumBack">กลับไปหน้าออเดอร์</button>
+</dialog>
+
+<dialog id="stock" aria-labelledby="stockTitle">
+  <h2 id="stockTitle">ของหมด / มีขาย</h2>
+  <p class="who">แตะที่เมนูเพื่อสลับ ลูกค้าจะเห็นทันทีที่เปิดหรือโหลดเมนูใหม่</p>
+  <div id="stockList"></div>
+  <p class="msg" id="stockMsg" role="status"></p>
+  <button class="btn quiet" type="button" id="stockClose">กลับไปหน้าออเดอร์</button>
 </dialog>
 
 <dialog id="payDlg" aria-labelledby="payDlgTitle">
@@ -229,6 +274,24 @@
 
   // สรุปยอดตัวอย่าง คิดจากออเดอร์ตัวอย่างด้านบน (โหมดทดลองเท่านั้น ของจริงหลังร้านเป็นคนคิด)
   let demoShut = false, demoShutAt = '';
+  const demoMenu = [
+    { cat: 'เนื้อสัตว์', name: 'หมูสไลซ์', price: 12, unit: 'ไม้', available: true },
+    { cat: 'เนื้อสัตว์', name: 'ไก่หมัก', price: 12, unit: 'ไม้', available: true },
+    { cat: 'ลูกชิ้นและเต้าหู้', name: 'ลูกชิ้นปลา', price: 12, unit: 'ไม้', available: true },
+    { cat: 'ผัก', name: 'เห็ดเข็มทอง', price: 12, unit: 'ไม้', available: false },
+    { cat: 'หมึกย่าง', name: 'ปลาหมึกสด', price: 15, unit: 'ไม้', available: true },
+  ];
+  // สรุปยอดตัวอย่างสำหรับโหมดทดลอง ตัวเลขสมมติ
+  function demoReport(range) {
+    const n = range === 'week' ? 7 : range === 'month' ? 21 : 30;
+    const byDay = Array.from({ length: n }, (_, i) => ({ day: '', label: (i + 1) + '/10', orders: (i * 7) % 11 + 4, total: ((i * 7) % 11 + 4) * 96 }));
+    const total = byDay.reduce((a, d) => a + d.total, 0), orders = byDay.reduce((a, d) => a + d.orders, 0);
+    const byHour = Array(24).fill(0); [16, 17, 18, 19, 20, 21, 22].forEach((h, i) => { byHour[h] = [3, 6, 14, 22, 18, 9, 4][i] * Math.ceil(n / 7); });
+    return { ok: true, range, label: range === 'week' ? '7 วันล่าสุด' : range === 'month' ? 'เดือนนี้ 10/2026' : 'เดือนที่แล้ว 9/2026',
+      from: byDay[0].label, to: byDay[n - 1].label, orders, cancelled: 2, qty: orders * 8, total, discount: orders * 3, avg: Math.round(total / orders), customers: Math.round(orders * .6),
+      byDay, byHour, items: [{ name: 'หมูสไลซ์', qty: orders * 3, unit: 'ไม้', sum: orders * 36 }, { name: 'ไก่หมัก', qty: orders * 2, unit: 'ไม้', sum: orders * 24 }, { name: 'ลูกชิ้นปลา', qty: orders, unit: 'ไม้', sum: orders * 12 }],
+      unsold: ['เห็ดเข็มทอง'] };
+  }
   function demoSummary(justClosed) {
     const live = demo.filter(o => o.status !== 'ยกเลิก'), items = {};
     live.forEach(o => o.lines.forEach(l => {
@@ -259,6 +322,8 @@
         { id: 'old-2', date: '2026-10-03', time: '19:20', status: 'เสร็จแล้ว', total: 84, lines: [{ name: 'หมูสไลซ์', qty: 4 }, { name: 'ไก่หมัก', qty: 3 }] },
         { id: 'old-1', date: '2026-09-26', time: '18:05', status: 'เสร็จแล้ว', total: 60, lines: [{ name: 'เนื้อวัวสไลซ์', qty: 5 }] },
       ] };
+      if (body.action === 'stock') { const m = demoMenu.find(x => x.name === body.name); if (!m) return { ok: false, error: 'ไม่พบเมนูนี้' }; m.available = body.available === true; return { ok: true, name: m.name, available: m.available }; }
+      if (body.action === 'report') return demoReport(body.range);
       if (body.action === 'summary' || body.action === 'closeDay' || body.action === 'openDay') {
         if (body.action === 'closeDay') { demoShut = true; demoShutAt = new Date().toTimeString().slice(0, 5); }
         if (body.action === 'openDay') demoShut = false;
@@ -482,6 +547,7 @@
       $('gate').hidden = true;
       $('board').hidden = false;
       $('sumBtn').hidden = false;
+      $('stockBtn').hidden = false;
       closed = data.closed === true;
       showClosed();
       try { localStorage.setItem(KEY_STORE, key); } catch (e) {}
@@ -503,8 +569,10 @@
     $('gateMsg').textContent = msg || '';
     $('soundBtn').hidden = true;
     $('sumBtn').hidden = true;
+    $('stockBtn').hidden = true;
     showClosed();
     if ($('sum').open) $('sum').close();
+    if ($('stock').open) $('stock').close();
     setStatus('');
   }
 
@@ -711,11 +779,77 @@
     try { data = await api(body); } catch (e) {}
     sumBusy = false;
     if (!data || !data.ok || !Array.isArray(data.items)) { $('sumMsg').textContent = (data && data.error) || failText; return null; }
-    renderSummary(data);
+    if (sumRange === 'today') renderSummary(data); else { closed = data.closed === true; showClosed(); }
     return data;
   }
 
+  // ---------- สรุปยอดรายสัปดาห์ / รายเดือน ----------
+  let sumRange = 'today', repSeq = 0;
+  function setSumTab(range) {
+    sumRange = range;
+    document.querySelectorAll('.sum-tabs button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.range === range)));
+    $('sumTitle').textContent = range === 'today' ? 'สรุปยอดวันนี้' : 'สรุปยอด';
+  }
+  const barList = (rows, top) => '<ul class="bars">' + rows.map(r =>
+    `<li><span>${esc(r.label)}</span><span class="bar${r.value ? (r.value === top ? ' top' : '') : ' zero'}" style="width:${top ? Math.max(1, Math.round(r.value / top * 100)) : 1}%"></span><span class="val">${esc(r.text)}</span></li>`).join('') + '</ul>';
+  function renderReport(r) {
+    const items = Array.isArray(r.items) ? r.items : [];
+    const days = Array.isArray(r.byDay) ? r.byDay : [];
+    const hours = Array.isArray(r.byHour) ? r.byHour : [];
+    $('sumWhen').textContent = r.label + ' (' + r.from + ' ถึง ' + r.to + ')';
+    $('sumWhen').classList.remove('shut');
+    const dayTop = Math.max(0, ...days.map(d => Number(d.total) || 0));
+    const busy = hours.map((c, h) => ({ h, c: Number(c) || 0 }));
+    const firstH = busy.findIndex(x => x.c), lastH = 23 - [...busy].reverse().findIndex(x => x.c);
+    const hourRows = firstH < 0 ? [] : busy.slice(firstH, lastH + 1).map(x => ({ label: String(x.h).padStart(2, '0') + ':00', value: x.c, text: x.c + ' ออเดอร์' }));
+    const hourTop = Math.max(0, ...hourRows.map(x => x.value));
+    const peak = hourRows.find(x => x.value === hourTop && hourTop > 0);
+    const itemRows = items.map((x, i) => `<tr><td>${i + 1}. ${esc(x.name)}</td><td><b>${Number(x.qty)}</b> ${esc(x.unit || '')}</td><td>${money(x.sum)}</td></tr>`).join('');
+    const unsold = Array.isArray(r.unsold) ? r.unsold : [];
+    $('sumBody').innerHTML = !r.orders ? '<p class="empty">ช่วงนี้ยังไม่มีออเดอร์</p>' + (unsold.length ? '' : '') : `<div class="rep">
+      <div class="rep-kpis">
+        <div class="big"><small>ยอดเงินรวม (หลังหักโปร)</small><b>${money(r.total)}</b></div>
+        <div><small>จำนวนออเดอร์</small><b>${Number(r.orders)}</b></div>
+        <div><small>เฉลี่ยต่อออเดอร์</small><b>${money(r.avg)}</b></div>
+        <div><small>ขายไปทั้งหมด</small><b>${Number(r.qty)}</b> ไม้</div>
+        <div><small>ลูกค้า (LINE/เบอร์)</small><b>${Number(r.customers)}</b> คน</div>
+      </div>
+      <h3>ยอดขายรายวัน</h3>
+      ${barList(days.map(d => ({ label: d.label, value: Number(d.total) || 0, text: d.orders ? money(d.total) : '-' })), dayTop)}
+      <h3>ช่วงเวลาที่คนสั่งเยอะ${peak ? ' (มากสุด ' + esc(peak.label) + ')' : ''}</h3>
+      ${barList(hourRows, hourTop)}
+      <h3>เมนูขายดี → ขายน้อย</h3>
+      <table class="sum-table"><tbody>${itemRows}</tbody></table>
+      ${unsold.length ? `<h3>ไม่มีคนสั่งเลยในช่วงนี้</h3><p class="unsold">${unsold.map(esc).join(', ')}</p>` : ''}
+      ${r.cancelled ? `<p class="sum-warn">ยกเลิก ${Number(r.cancelled)} ออเดอร์ ไม่นับในยอด</p>` : ''}
+    </div>`;
+    $('sumShut').hidden = true; $('sumReopen').hidden = true;
+  }
+  async function showReport(range) {
+    const mine = ++repSeq;
+    $('sumWhen').textContent = '';
+    $('sumBody').innerHTML = '<p>กำลังโหลด…</p>';
+    $('sumShut').hidden = true; $('sumReopen').hidden = true;
+    $('sumMsg').textContent = '';
+    let data = null;
+    try { data = await api({ action: 'report', range }); } catch (e) {}
+    if (mine !== repSeq || sumRange !== range) return;   // เปลี่ยนแท็บไปแล้ว
+    if (!data || !data.ok || !Array.isArray(data.items)) { $('sumBody').innerHTML = ''; $('sumMsg').textContent = (data && data.error) || 'โหลดสรุปยอดไม่ได้ ลองกดแท็บนี้อีกครั้ง'; return; }
+    renderReport(data);
+  }
+  document.querySelectorAll('.sum-tabs button').forEach(b => b.addEventListener('click', async () => {
+    const range = b.dataset.range;
+    setSumTab(range);
+    disarm();
+    if (range !== 'today') { showReport(range); return; }
+    repSeq++;
+    $('sumWhen').textContent = '';
+    $('sumBody').innerHTML = '<p>กำลังโหลด…</p>';
+    if (!await callSummary({ action: 'summary' }, 'โหลดสรุปยอดไม่ได้ ปิดหน้านี้แล้วกดปุ่มสรุปยอดอีกครั้ง')) $('sumBody').innerHTML = '';
+  }));
+
   $('sumBtn').addEventListener('click', async () => {
+    setSumTab('today'); repSeq++;
     $('sumWhen').textContent = '';
     $('sumBody').innerHTML = '<p>กำลังโหลด…</p>';
     $('sumShut').hidden = true; $('sumReopen').hidden = true;
@@ -745,6 +879,59 @@
   $('sumBack').addEventListener('click', () => $('sum').close());
   $('sum').addEventListener('click', e => { if (e.target === $('sum')) $('sum').close(); });
   $('sum').addEventListener('close', () => { disarm(); if (timer) refresh(); });
+
+  // ---------- ของหมด / มีขาย ----------
+  // แตะที่เมนูเพื่อสลับสถานะ หน้าจอเปลี่ยนทันที แล้วจดลงช่อง "พร้อมขาย" ในแท็บเมนูของชีต ถ้าจดไม่สำเร็จจะเปลี่ยนกลับและแจ้ง
+  let stockMenu = [];
+  const stockBusy = new Set();
+  function renderStock() {
+    const cats = [];
+    stockMenu.forEach(m => { if (!cats.includes(m.cat)) cats.push(m.cat); });
+    const out = stockMenu.filter(m => !m.available).length;
+    $('stockList').innerHTML = (out ? `<p class="sum-warn">ตอนนี้ปิดไว้ ${out} เมนู</p>` : '') + cats.map(c => `<h3>${esc(c)}</h3>` + stockMenu.filter(m => m.cat === c).map(m =>
+      `<button type="button" class="stock-row${m.available ? '' : ' is-out'}${stockBusy.has(m.name) ? ' is-busy' : ''}" data-stock="${esc(m.name)}" aria-pressed="${m.available ? 'false' : 'true'}">
+        <span class="name">${esc(m.name)}</span><span class="pill">${m.available ? 'มีขาย' : 'หมด'}</span></button>`).join('')).join('');
+  }
+  async function loadStock() {
+    $('stockMsg').textContent = '';
+    $('stockList').innerHTML = '<p>กำลังโหลดเมนู…</p>';
+    try {
+      if (!CFG.API_URL) stockMenu = JSON.parse(JSON.stringify(demoMenu));
+      else {
+        const res = await fetch(CFG.API_URL + '?action=menu', { cache: 'no-store' });
+        const data = await res.json();
+        if (!data || !data.ok || !Array.isArray(data.menu)) throw new Error('menu');
+        stockMenu = data.menu.map(m => ({ cat: String(m.cat), name: String(m.name), available: m.available === true }));
+      }
+      renderStock();
+    } catch (e) {
+      $('stockList').innerHTML = '';
+      $('stockMsg').textContent = 'โหลดเมนูไม่ได้ ปิดแล้วกดปุ่มอีกครั้ง';
+    }
+  }
+  $('stockBtn').addEventListener('click', () => { if (!$('stock').open) $('stock').showModal(); loadStock(); });
+  $('stockList').addEventListener('click', async e => {
+    const btn = e.target.closest('button[data-stock]');
+    if (!btn) return;
+    const m = stockMenu.find(x => x.name === btn.dataset.stock);
+    if (!m || stockBusy.has(m.name)) return;
+    const want = !m.available;
+    m.available = want; stockBusy.add(m.name); renderStock();
+    $('stockMsg').textContent = '';
+    let data = null;
+    try { data = await api({ action: 'stock', name: m.name, available: want }); } catch (err) {}
+    stockBusy.delete(m.name);
+    if (!data || !data.ok) {
+      m.available = !want;
+      $('stockMsg').textContent = (data && data.error) || 'บันทึกไม่สำเร็จ ลองแตะอีกครั้ง';
+    } else {
+      m.available = data.available === true;
+      $('stockMsg').textContent = m.name + (m.available ? ' กลับมาขายแล้ว' : ' ตั้งเป็นของหมดแล้ว');
+    }
+    renderStock();
+  });
+  $('stockClose').addEventListener('click', () => $('stock').close());
+  $('stock').addEventListener('click', e => { if (e.target === $('stock')) $('stock').close(); });
 
   $('viewerClose').addEventListener('click', () => $('viewer').close());
   $('viewer').addEventListener('click', e => { if (e.target === $('viewer')) $('viewer').close(); });

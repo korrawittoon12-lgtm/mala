@@ -328,6 +328,8 @@
   .track-row + .track-row { border-top: 1px solid var(--line); }
   .track-q { font-weight: 800; font-style: italic; font-size: 1.25rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
   .track-s { flex: 1; }
+  .track-a { display: block; color: var(--red-deep); font-size: .875rem; font-weight: 600; }
+  .ahead { margin: .25rem 0 .75rem; padding: .5rem .75rem; border-radius: 10px; background: #FFF6D6; font-weight: 600; font-size: 1.0625rem; }
   .track-go { text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
 
   @media (prefers-reduced-motion: no-preference) {
@@ -434,6 +436,7 @@
       <h2 id="doneTitle">ส่งออเดอร์แล้ว</h2>
       <div class="queue brush"><small>คิวที่</small><b id="doneQueue"></b></div>
       <p id="doneTable"></p>
+      <p class="ahead" id="doneAhead" role="status" hidden></p>
       <div class="prog" id="doneSteps" data-at="0">
         <div class="prog-track" aria-hidden="true"><span class="prog-fill"></span></div>
         <ol class="prog-steps" aria-label="สถานะออเดอร์">
@@ -1083,6 +1086,7 @@
     const rec = {
       id: String(data.orderId || 'demo-' + Date.now()), clientId: payload.clientId, queue: String(data.queue),
       total: Number(data.total != null ? data.total : total), table: state.table, pay, at: Date.now(), status: 'ใหม่', paid: false, finalAt: 0, slip: '',
+      ahead: Number.isInteger(data.ahead) && data.ahead >= 0 ? data.ahead : -1,   // รออีกกี่คิว (-1 = ยังไม่รู้)
     };
     tracked = [rec].concat(tracked.filter(t => t.id !== rec.id)).slice(0, TRACK_MAX);
     saveTracked();
@@ -1136,9 +1140,15 @@
     $('track').hidden = !tracked.length;
     $('trackList').innerHTML = tracked.map(t => `<button class="track-row" type="button" data-track="${esc(t.id)}">
         <span class="track-q">คิว ${esc(t.queue)}</span>
-        <span class="track-s">${esc(STEP_TEXT[t.status])}${t.paid ? '<span class="paid-tag">จ่ายแล้ว</span>' : t.slip === 'รอตรวจ' ? ' · รอร้านตรวจสลิป' : t.slip === 'ไม่ผ่าน' ? ' · สลิปไม่ผ่าน' : ''}</span>
+        <span class="track-s">${esc(STEP_TEXT[t.status])}${t.paid ? '<span class="paid-tag">จ่ายแล้ว</span>' : t.slip === 'รอตรวจ' ? ' · รอร้านตรวจสลิป' : t.slip === 'ไม่ผ่าน' ? ' · สลิปไม่ผ่าน' : ''}${aheadText(t) ? `<span class="track-a">${esc(aheadText(t))}</span>` : ''}</span>
         <span class="track-go">${t.pay && !t.paid && t.status !== 'ยกเลิก' && t.slip !== 'รอตรวจ' ? 'ดู QR จ่ายเงิน' : 'ดู'}</span>
       </button>`).join('');
+  }
+
+  // รออีกกี่คิว: หลังร้านนับออเดอร์ของวันนี้ที่สั่งก่อนเราและยังไม่เสร็จ (ไม่นับที่ยกเลิก) ร้านเริ่มทำของเราแล้วก็ไม่ต้องบอก
+  function aheadText(t) {
+    if (!t || t.status !== 'ใหม่' || !Number.isInteger(t.ahead) || t.ahead < 0) return '';
+    return t.ahead === 0 ? 'คิวถัดไปคือคุณ' : 'ก่อนหน้าคุณอีก ' + t.ahead + ' คิว';
   }
 
   // เติมแผ่น "ส่งออเดอร์แล้ว" ด้วยออเดอร์ที่กำลังดูอยู่ เรียกซ้ำได้ทุกครั้งที่สถานะเปลี่ยน
@@ -1150,6 +1160,8 @@
     $('doneTable').textContent = /^\d+$/.test(t.table) ? 'โต๊ะ ' + t.table : t.table;
     $('doneTable').hidden = !t.table;
     $('doneTotal').textContent = money(t.total);
+    $('doneAhead').textContent = aheadText(t);
+    $('doneAhead').hidden = !aheadText(t);
     const order = ['ใหม่', 'กำลังทำ', 'เสร็จแล้ว'], at = order.indexOf(t.status);
     $('doneSteps').hidden = at < 0;
     $('doneSteps').dataset.at = String(Math.max(0, at));   // CSS ใช้ค่านี้ยืดเส้นสถานะไปหาขั้นถัดไป
@@ -1330,8 +1342,9 @@
       const t = tracked.find(x => x.id === String(o.orderId));
       if (!t || !STEP_TEXT[o.status]) return;
       const paid = o.paid === true, slip = SLIP_STATES.includes(o.slip) ? o.slip : t.slip;
-      if (t.status !== o.status || t.paid !== paid || t.slip !== slip) changed = true;
-      t.status = o.status; t.paid = paid; t.slip = slip;
+      const ahead = Number.isInteger(o.ahead) && o.ahead >= 0 ? o.ahead : -1;
+      if (t.status !== o.status || t.paid !== paid || t.slip !== slip || t.ahead !== ahead) changed = true;
+      t.status = o.status; t.paid = paid; t.slip = slip; t.ahead = ahead;
       if (isFinal(t) && !t.finalAt) { t.finalAt = Date.now(); changed = true; }
     });
     if (changed) saveTracked();
@@ -1517,7 +1530,7 @@
     'รูปที่ถ่ายไว้': 'Your photo', 'ร้านยกเลิกออเดอร์นี้ สอบถามที่ร้านได้เลย': 'The shop cancelled this order. Please ask our staff.',
     [CLOSED_TEXT]: 'Sorry, we are not taking orders for the rest of today. Thank you!',
     'สั่งเพิ่ม': 'Order more', 'สแกนจ่ายด้วยพร้อมเพย์': 'Scan to pay with PromptPay', 'ส่งออเดอร์': 'Send order', 'กำลังส่ง…': 'Sending…',
-    'เบอร์โทร (ไม่ใส่ก็ได้)': 'Phone (optional)', 'กำลังส่งออเดอร์': 'Sending your order', 'กำลังส่งรายการและรูป…': 'Sending your items and photo…',
+    'เบอร์โทร (ไม่ใส่ก็ได้)': 'Phone (optional)', 'คิวถัดไปคือคุณ': "You're next", 'กำลังส่งออเดอร์': 'Sending your order', 'กำลังส่งรายการและรูป…': 'Sending your items and photo…',
     'ร้านกำลังบันทึกออเดอร์…': 'The shop is saving your order…', 'กำลังออกเลขคิว ใกล้เสร็จแล้ว…': 'Getting your queue number, almost done…',
     'เน็ตช้านิดหน่อย รอสักครู่…': 'Slow connection, please wait…', 'อย่าเพิ่งปิดหน้านี้': "Please don't close this page",
     'ส่งออเดอร์แล้ว': 'Order sent', 'กำลังทำออเดอร์': 'Cooking your order', 'พร้อมเสิร์ฟแล้ว': 'Your order is ready!', 'ออเดอร์ถูกยกเลิก': 'Order cancelled',
@@ -1556,6 +1569,7 @@
   };
   const TH_RULES = [
     [/^คิว (\S+)$/, m => 'Queue ' + m[1]],
+    [/^ก่อนหน้าคุณอีก (\d+) คิว$/, m => m[1] + (m[1] === '1' ? ' order' : ' orders') + ' ahead of you'],
     [/^โต๊ะ (.+)$/, m => 'Table ' + m[1]],
     [/^ส่งออเดอร์ (฿[\d,.]+)$/, m => 'Send order ' + m[1]],
     [/^เลือกแล้ว (\d+) (\S+?)(?: \(ฟรี (\d+)\))?$/, m => m[1] + ' ' + unitEn(m[2], m[1]) + ' selected' + (m[3] ? ' (' + m[3] + ' free)' : '')],
