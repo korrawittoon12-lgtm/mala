@@ -1031,6 +1031,13 @@
 
   // หน้าจอระหว่างส่ง: ข้อความเปลี่ยนไปตามเวลาที่รอ และแถบวิ่งเข้าใกล้เต็มเรื่อย ๆ จนหลังร้านตอบกลับ
   // (หลังร้านไม่ได้บอกว่าถึงขั้นไหน จึงเดาจากเวลาที่ใช้ตามปกติ: ส่งรูป ~1-2 วินาที บันทึก ~2-3 วินาที)
+  // คำตอบของการส่งออเดอร์ต้องมีเลขออเดอร์ (เช่น 261022-001) ไม่อย่างนั้นหน้าลูกค้าจะขึ้นคิว undefined และติดตามสถานะไม่ได้
+  // (พบเมื่อ 22/10/2026) ถ้าได้คำตอบแบบนี้ จะส่งใหม่ด้วย clientId เดิม หลังร้านจะตอบเลขคิวเดิมกลับมา ไม่เกิดออเดอร์ซ้ำ
+  const ORDER_ID_RE = /^\d{6}-\d{3,}$/;
+  const queueOf = id => (/-(\d{3,})$/.exec(String(id || '')) || [])[1] || '';
+  const goodOrder = d => !CFG.API_URL || (typeof d.orderId === 'string' && ORDER_ID_RE.test(d.orderId));
+  // จดคำตอบแปลก ๆ ล่าสุดไว้ในเครื่องลูกค้า ไว้ตรวจหาสาเหตุ (ดูได้จาก localStorage ชื่อ mala-bad-reply)
+  function noteBadReply(d) { try { localStorage.setItem('mala-bad-reply', JSON.stringify({ at: new Date().toISOString(), reply: d }).slice(0, 1500)); } catch (e) {} }
   const SEND_TRIES = 3;   // ส่งออเดอร์ได้สูงสุดกี่ครั้งก่อนบอกลูกค้าว่าส่งไม่สำเร็จ
   const SENDING_STEPS = [
     [0, 'กำลังส่งรายการและรูป…'],
@@ -1123,6 +1130,7 @@
       } catch (e) {
         data = null;
       }
+      if (data && data.ok && !goodOrder(data)) { noteBadReply(data); data = null; continue; }   // ตอบว่าสำเร็จแต่ไม่มีเลขคิว: ถามใหม่ด้วย clientId เดิม
       if (data && data.code !== 'BUSY') break;
     }
     if (data && data.code === 'BUSY') data = null;
@@ -1152,7 +1160,7 @@
     const pay = data.pay && typeof data.pay.qr === 'string' && /^[0-9A-Za-z.]{40,200}$/.test(data.pay.qr)
       ? { qr: data.pay.qr, to: String(data.pay.to || ''), amount: Number(data.pay.amount) || 0, manual: data.pay.manual === true } : null;
     const rec = {
-      id: String(data.orderId || 'demo-' + Date.now()), clientId: payload.clientId, queue: String(data.queue),
+      id: String(data.orderId || 'demo-' + Date.now()), clientId: payload.clientId, queue: String(data.queue || queueOf(data.orderId) || '001'),
       total: Number(data.total != null ? data.total : total), table: state.table, pay, at: Date.now(), status: 'ใหม่', paid: false, finalAt: 0, slip: '',
       ahead: Number.isInteger(data.ahead) && data.ahead >= 0 ? data.ahead : -1,   // รออีกกี่คิว (-1 = ยังไม่รู้)
     };
@@ -1198,7 +1206,10 @@
           pay: t.pay && typeof t.pay.qr === 'string' && /^[0-9A-Za-z.]{40,200}$/.test(t.pay.qr) ? { qr: t.pay.qr, to: String(t.pay.to || ''), amount: Number(t.pay.amount) || 0, manual: t.pay.manual === true } : null,
           at: Number(t.at) || 0, status: STEP_TEXT[t.status] ? t.status : 'ใหม่', paid: t.paid === true, finalAt: Number(t.finalAt) || 0,
           slip: SLIP_STATES.includes(t.slip) ? t.slip : '',
-        }));
+          ahead: Number.isInteger(t.ahead) ? t.ahead : -1,
+        }))
+        // ทิ้งออเดอร์ที่จดไว้ไม่ครบ (ไม่มีเลขคิว หรือไม่มีเลขออเดอร์จริง) เพราะถามสถานะจากหลังร้านไม่ได้
+        .filter(t => !CFG.API_URL || (ORDER_ID_RE.test(t.id) && /^\d+$/.test(t.queue)));
     } catch (e) { tracked = []; }
     pruneTracked();
   }
@@ -1775,7 +1786,11 @@
     $('qrSaveClose').addEventListener('click', () => $('qrSave').close());
     $('qrSave').addEventListener('click', e => { if (e.target === $('qrSave')) $('qrSave').close(); });
     $('sheet').addEventListener('close', () => { viewing = ''; });
-    document.addEventListener('visibilitychange', () => { if (!document.hidden && tracked.some(stillOpen)) pollTrack(); });
+    // กลับมาที่หน้านี้ (สลับแอป ล็อกจอ หรือ LINE พักหน้าไว้) ให้ถามสถานะทันที และเริ่มจับเวลาใหม่ถ้าเครื่องหยุดไว้
+    const wake = () => { if (!document.hidden && tracked.some(stillOpen)) { stopTracking(); pollTrack(); startTracking(); } };
+    document.addEventListener('visibilitychange', wake);
+    window.addEventListener('pageshow', wake);
+    window.addEventListener('focus', wake);
     $('openHistory').addEventListener('click', openHistory);
     $('historyClose').addEventListener('click', () => $('history').close());
     $('historyList').addEventListener('click', e => {
