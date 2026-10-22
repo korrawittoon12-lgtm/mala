@@ -348,7 +348,10 @@
   .deal-actions .btn { width: 100%; min-height: 3.25rem; font-size: 1.0625rem; }
   .track-a { display: block; color: var(--red-deep); font-size: .875rem; font-weight: 600; }
   .ahead { margin: .25rem 0 .75rem; padding: .5rem .75rem; border-radius: 10px; background: #FFF6D6; font-weight: 600; font-size: 1.0625rem; }
-  .track-go { text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
+  /* ปุ่ม "ดูสถานะ" ในแถวคิวที่สั่งไว้: ทำเป็นปุ่มสีแดงให้ลูกค้าเห็นชัดว่ากดได้ */
+  .track-go { display: inline-flex; align-items: center; gap: .25rem; min-height: 2.5rem; padding: .375rem 1rem; border-radius: 999px; background: var(--red); color: #FFFDF8; font-weight: 700; font-size: 1rem; white-space: nowrap; box-shadow: 0 3px 0 var(--red-deep); }
+  .track-go::after { content: '›'; font-size: 1.375rem; line-height: 1; margin-top: -.125rem; }
+  .track-row:active .track-go { transform: translateY(2px); box-shadow: 0 1px 0 var(--red-deep); }
 
   @media (prefers-reduced-motion: no-preference) {
     html { scroll-behavior: smooth; }
@@ -1206,7 +1209,7 @@
     $('trackList').innerHTML = tracked.map(t => `<button class="track-row" type="button" data-track="${esc(t.id)}">
         <span class="track-q">คิว ${esc(t.queue)}</span>
         <span class="track-s">${esc(STEP_TEXT[t.status])}${t.paid ? '<span class="paid-tag">จ่ายแล้ว</span>' : t.slip === 'รอตรวจ' ? ' · รอร้านตรวจสลิป' : t.slip === 'ไม่ผ่าน' ? ' · สลิปไม่ผ่าน' : ''}${aheadText(t) ? `<span class="track-a">${esc(aheadText(t))}</span>` : ''}</span>
-        <span class="track-go">${t.pay && !t.paid && t.status !== 'ยกเลิก' && t.slip !== 'รอตรวจ' ? 'ดู QR จ่ายเงิน' : 'ดู'}</span>
+        <span class="track-go">${t.pay && !t.paid && t.status !== 'ยกเลิก' && t.slip !== 'รอตรวจ' ? 'ดู QR จ่ายเงิน' : 'ดูสถานะ'}</span>
       </button>`).join('');
   }
 
@@ -1624,7 +1627,7 @@
     'ยังไม่เคยสั่งกับร้านนี้ผ่าน LINE': 'No orders with us on LINE yet', 'ดูประวัติไม่ได้ ตรวจสัญญาณอินเทอร์เน็ตแล้วลองอีกครั้ง': 'Could not load past orders. Check your internet and try again.',
     'รายการในออเดอร์นี้ไม่มีขายแล้ว': 'The items in this order are no longer sold',
     'เปลี่ยนรายการที่เลือกไว้ เป็นรายการของออเดอร์นี้ใช่ไหม': 'Replace your current items with the items from this order?',
-    'ตัวอย่างประวัติ (โหมดทดลอง)': 'Sample history (demo mode)', 'ดู': 'View', 'ดู QR จ่ายเงิน': 'Show payment QR',
+    'ตัวอย่างประวัติ (โหมดทดลอง)': 'Sample history (demo mode)', 'ดู': 'View', 'ดูสถานะ': 'View status', 'ดู QR จ่ายเงิน': 'Show payment QR',
     'ยังไม่ได้แนบรูป หรือรูปใหญ่เกินไป ลองถ่ายใหม่อีกครั้ง': 'No photo attached, or it is too large. Please take it again.',
     'เปิดเมนูนี้จากในแอป LINE อีกครั้ง แล้วจะดูที่เคยสั่งได้': 'Open this menu from the LINE app again to see past orders.',
     'ระบบขัดข้องชั่วคราว ลองอีกครั้ง': 'Something went wrong. Please try again.', 'ไม่พบออเดอร์นี้': 'Order not found',
