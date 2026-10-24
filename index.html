@@ -773,15 +773,15 @@
     'ปลาดอลลี่': 'dory', 'ท้องปลาแซลมอล': 'salmon', 'ท้องปลาแซลมอน': 'salmon', 'เอ็นเต้ไก่': 'entaikai',
     'ไส้กรอกแดง': 'sausage_red', 'ไส้กรอกแดงแหลมทอง': 'sausage_red', 'โบโลน่า แผ่นกลม': 'bologna', 'ปูอัดเมก้า': 'crabstick', 'ไส้กรอกชีส': 'cheese_sausage',
     'แฮมหมู แผ่นกลม': 'ham', 'เต้าหู้ชีส': 'cheese_tofu', 'ไส้กรอกนม': 'milk_sausage', 'เต้าหู้ปลา': 'fish_tofu',
-    'แฮมเบคอน': 'bacon_ham', 'ไส้กรอกพันเบคอน': 'bacon_sausage', 'ฟองเต้าหู้สามเหลี่ยม': 'tofu_skin', 'ไส้กรอกไก่กรอบ': 'crispy_chicken_sausage',
+    'แฮมเบคอน': 'bacon_ham', 'แฮมเบคอนเสียบไม้': 'bacon_ham', 'ไส้กรอกพันเบคอน': 'bacon_sausage', 'ฟองเต้าหู้สามเหลี่ยม': 'tofu_skin', 'ไส้กรอกไก่กรอบ': 'crispy_chicken_sausage',
     'เห็ดเข็มทองพันสามชั้น': 'enoki_pork', 'บลอคโคลี': 'broccoli', 'บรอกโคลี': 'broccoli', 'บร็อคโคลี่': 'broccoli',
-    'กระเจี๊ยบ': 'okra', 'กระเจี๊ยบพันสามชั้น': 'okra_pork', 'ข้าวโพดอ่อน': 'babycorn', 'ข้าวโพดอ่อนพันสามชั้น': 'babycorn_pork', 'ข้าวโพด': 'babycorn', 'เห็ดออริลจิ': 'king_oyster', 'เห็ดออรินจิ': 'king_oyster', 'เห็ดเออรินจิ': 'king_oyster',
+    'กระเจี๊ยบ': 'okra', 'กระเจี๊ยบพันสามชั้น': 'okra_pork', 'พริกหนุ่มยัดไส้หมู': 'chili_pork', 'สาหร่ายวากาเมะพันสามชั้น': 'wakame_pork', 'ข้าวโพดอ่อน': 'babycorn', 'ข้าวโพดอ่อนพันสามชั้น': 'babycorn_pork', 'ข้าวโพด': 'babycorn', 'เห็ดออริลจิ': 'king_oyster', 'เห็ดออรินจิ': 'king_oyster', 'เห็ดเออรินจิ': 'king_oyster',
     'คางปลาหมึก': 'squid_head', 'ปลาหมึกสาย': 'octopus', 'ปลาหมึกเมก้า': 'squid_mega', 'หอยแครงเสียบไม้': 'cockle',
   };
   const ICON_GUESS = [
     [/หมึกสาย|หนวด|ปลาหมึกจิ๋ว/, 'octopus'], [/หมึก/, 'squid_mega'], [/หอย/, 'cockle'], [/ปูอัด/, 'crabstick'], [/ไส้กรอก.*เบคอน|เบคอน.*ไส้กรอก/, 'bacon_sausage'], [/ชีส/, 'cheese_sausage'], [/ไส้กรอก/, 'sausage_red'],
     [/เบคอน/, 'bacon_ham'], [/แฮม|โบโลน่า/, 'ham'], [/ฟองเต้าหู้/, 'tofu_skin'], [/เต้าหู้|ลูกชิ้น/, 'fish_tofu'],
-    [/ข้าวโพด.*พัน/, 'babycorn_pork'], [/กระเจี๊ยบ.*พัน/, 'okra_pork'], [/ข้าวโพด/, 'babycorn'], [/เข็มทอง/, 'enoki_pork'], [/เห็ด/, 'king_oyster'], [/บร|บล|โคลี/, 'broccoli'], [/กระเจี๊ยบ|ผัก/, 'okra'],
+    [/พริก.*(ยัด|ไส้)/, 'chili_pork'], [/สาหร่าย|วากาเมะ/, 'wakame_pork'], [/ข้าวโพด.*พัน/, 'babycorn_pork'], [/กระเจี๊ยบ.*พัน/, 'okra_pork'], [/ข้าวโพด/, 'babycorn'], [/เข็มทอง/, 'enoki_pork'], [/เห็ด/, 'king_oyster'], [/บร|บล|โคลี/, 'broccoli'], [/กระเจี๊ยบ|ผัก/, 'okra'],
     [/แซลมอ|ปลา/, 'salmon'], [/ไก่/, 'kaisannai'], [/สามชั้น/, 'samchan'], [/หมู|เนื้อ|วัว/, 'moosankor'],
   ];
   function menuIcon(name) {
@@ -1582,7 +1582,7 @@
     'ปลาดอลลี่': 'Dory fish', 'ท้องปลาแซลมอน': 'Salmon belly', 'ท้องปลาแซลมอล': 'Salmon belly', 'เอ็นเต้ไก่': 'Chicken cartilage',
     'ไส้กรอกแดง': 'Red sausage', 'ไส้กรอกแดงแหลมทอง': 'Laem Thong red sausage', 'โบโลน่า แผ่นกลม': 'Bologna (round)', 'ปูอัดเมก้า': 'Jumbo crab stick', 'ไส้กรอกชีส': 'Cheese sausage',
     'แฮมหมู แผ่นกลม': 'Pork ham (round)', 'เต้าหู้ชีส': 'Cheese tofu', 'ไส้กรอกนม': 'Milk sausage', 'เต้าหู้ปลา': 'Fish tofu',
-    'แฮมเบคอน': 'Bacon ham', 'ไส้กรอกพันเบคอน': 'Bacon-wrapped sausage', 'ฟองเต้าหู้สามเหลี่ยม': 'Tofu skin triangles', 'ไส้กรอกไก่กรอบ': 'Crispy chicken sausage',
+    'แฮมเบคอน': 'Bacon ham', 'แฮมเบคอนเสียบไม้': 'Bacon ham', 'พริกหนุ่มยัดไส้หมู': 'Pork-stuffed green chili', 'สาหร่ายวากาเมะพันสามชั้น': 'Pork belly-wrapped wakame', 'ไส้กรอกพันเบคอน': 'Bacon-wrapped sausage', 'ฟองเต้าหู้สามเหลี่ยม': 'Tofu skin triangles', 'ไส้กรอกไก่กรอบ': 'Crispy chicken sausage',
     'เห็ดเข็มทองพันสามชั้น': 'Enoki wrapped in pork belly', 'บร็อคโคลี่': 'Broccoli', 'บลอคโคลี': 'Broccoli', 'บรอกโคลี': 'Broccoli',
     'กระเจี๊ยบ': 'Okra', 'กระเจี๊ยบพันสามชั้น': 'Okra wrapped in pork belly', 'เห็ดเออรินจิ': 'King oyster mushroom', 'เห็ดออรินจิ': 'King oyster mushroom', 'เห็ดออริลจิ': 'King oyster mushroom',
     'ข้าวโพดอ่อน': 'Baby corn', 'ข้าวโพดอ่อนพันสามชั้น': 'Baby corn wrapped in pork belly', 'คางปลาหมึก': 'Squid head', 'ปลาหมึกสาย': 'Baby octopus', 'ปลาหมึกเมก้า': 'Jumbo squid',
