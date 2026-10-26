@@ -7,15 +7,18 @@
 <title>ออเดอร์หลังร้าน</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600&family=Pattaya&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Noto+Serif+Thai:wght@600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    /* สีชุดเดียวกับหน้าเมนูของลูกค้า */
-    --chili: #B01116; --chili-deep: #8A0B10;
-    --celadon: #F6F1E7; --celadon-line: #E4DACA;
-    --paper: #FFFDF8; --ink: #141210; --ink-soft: #5E564B; --sesame: #F4C542;
-    --display: 'Pattaya', 'Kanit', 'Thonburi', system-ui, sans-serif;
-    --body: 'Kanit', 'Noto Sans Thai', 'Thonburi', system-ui, sans-serif;
+    /* สีชุดเดียวกับหน้าเมนูของลูกค้า (แบบ C โทนเข้ม เลือกเมื่อ 26/10/2026)
+       ชื่อสีเดิมยังใช้อยู่ทั้งไฟล์: --celadon = พื้นหน้า, --paper = พื้นการ์ด, --ink = สีตัวหนังสือ */
+    color-scheme: dark;
+    --chili: #E24A3B; --chili-deep: #FFB4A8;
+    --celadon: #16120F; --celadon-line: #3A302A;
+    --paper: #221C18; --paper-2: #2A211C; --ink: #F4EDE4; --ink-soft: #C9BCAE; --ink-mute: #A89A8B;
+    --sesame: #D9B46A; --gold: #D9B46A; --gold-ink: #16120F; --ok: #7FD39B;
+    --display: 'Noto Serif Thai', 'Thonburi', serif;
+    --body: 'IBM Plex Sans Thai', 'Noto Sans Thai', 'Thonburi', system-ui, sans-serif;
   }
   *, *::before, *::after { box-sizing: border-box; }
   [hidden] { display: none !important; }
@@ -148,6 +151,53 @@
   .pay-qr img, .pay-qr canvas { display: block; width: min(70vw, 18rem); height: min(70vw, 18rem); }
   .pay-row .btn { flex: 1; }
   .undo { background: none; border: 0; min-height: 2.75rem; padding: 0 .25rem; color: var(--ink-soft); text-decoration: underline; text-underline-offset: 3px; }
+
+  /* ===== แบบ C: ส่วนที่ต่างจากหน้าตาเดิม ===== */
+  .top { background: #0F0C0A; color: var(--ink); border-bottom: 1px solid #2E2621; padding: .875rem 1.25rem; }
+  .top h1 { font-weight: 700; font-size: 1.375rem; }
+  .top p { color: var(--ink-mute); }
+  .top p.bad { color: #fff; }
+  .btn { border-radius: 14px; }
+  .btn.quiet { background: transparent; color: var(--ink); border: 1px solid var(--celadon-line); }
+  .gate input { border: 1px solid var(--celadon-line); background: var(--paper); color: var(--ink); }
+  .board { gap: 1.125rem; padding: 1.125rem 1.25rem; }
+  .col h2 { align-items: center; justify-content: flex-start; gap: .5rem; font-family: var(--body); font-weight: 600; font-size: 1.125rem; }
+  .col h2::before { content: ''; width: .625rem; height: .625rem; border-radius: 50%; background: var(--chili); }
+  .col:nth-child(2) h2::before { background: var(--gold); }
+  .col:nth-child(3) h2::before { background: var(--ok); }
+  .col h2 span { color: var(--ink-mute); font-weight: 500; }
+  .empty { border: 1px dashed var(--celadon-line); color: var(--ink-mute); }
+  /* การ์ดออเดอร์: แถบสีด้านบนบอกสถานะ แดง = ใหม่, ทอง = กำลังทำ, เขียว = เสร็จแล้ว */
+  .card { border: 0; border-top: 3px solid var(--celadon-line); border-radius: 18px; background: var(--paper); }
+  .card[data-status="ใหม่"] { border-top: 3px solid var(--chili); box-shadow: 0 0 0 1px rgb(226 74 59 / .35); }
+  .card[data-status="กำลังทำ"] { border-top-color: var(--gold); }
+  .card[data-status="เสร็จแล้ว"] { border-top-color: var(--ok); color: var(--ink-soft); }
+  .card[data-status="ยกเลิก"] { border-top-color: var(--celadon-line); color: var(--ink-mute); }
+  .card-head { border-bottom-color: var(--celadon-line); }
+  .card-table { background: none; color: var(--ink); padding: 0; font-weight: 700; font-size: 1.75rem; }
+  .card li b { color: var(--gold); }
+  .lines-toggle { border: 1px dashed var(--celadon-line); }
+  .spice { background: rgb(226 74 59 / .18); color: #FFB4A8; }
+  .note, .regular, .slip-row, .sum-warn, .rep .unsold { background: #3A2E1A; color: #F6D28E; }
+  .regular { border: 1px solid #5A4A2A; }
+  .slip-row.is-warn { background: #3D1A16; color: #FFB4A8; }
+  .card-photo { border: 1px solid var(--celadon-line); }
+  .photo-wait { border: 1px dashed var(--celadon-line); }
+  .card-foot { border-top-color: var(--celadon-line); }
+  .card-foot .btn:not(.quiet) { background: var(--gold); color: var(--gold-ink); }
+  .card[data-status="ใหม่"] .card-foot .btn:not(.quiet) { background: var(--chili); color: #fff; }
+  dialog { background: var(--paper); border: 1px solid var(--celadon-line); }
+  dialog::backdrop { background: rgb(0 0 0 / .72); }
+  #past h2, #sum h2, #stock h2, #payDlg h2 { font-weight: 700; }
+  .sum-tabs button { border: 1px solid var(--celadon-line); background: transparent; }
+  .sum-tabs button[aria-pressed="true"] { background: var(--gold); border-color: var(--gold); color: var(--gold-ink); }
+  .rep-kpis div { background: var(--paper-2); }
+  .rep-kpis .big { background: var(--gold); color: var(--gold-ink); }
+  .rep-kpis .big small { color: #4A3A1C; }
+  .bars .bar { background: var(--gold); }
+  .bars .bar.top { background: var(--chili); }
+  .sum-totals .grand { border-top-color: var(--celadon-line); color: var(--gold); }
+  .pay-qr { border: 0; }
 </style>
 </head>
 <body>

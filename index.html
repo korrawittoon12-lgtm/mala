@@ -6,19 +6,26 @@
 <title>เมนู</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,400;0,500;0,600;1,700;1,800&family=Pattaya&family=Sriracha&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Noto+Serif+Thai:wght@600;700&display=swap" rel="stylesheet">
 <style>
+  /* หน้าตาแบบ C (โทนเข้ม พรีเมียม) เลือกเมื่อ 26/10/2026: พื้นเข้ม สีทองเป็นสีเด่น ตัวหนังสือหัวข้อแบบมีเชิง
+     ชื่อสีเดิมยังใช้อยู่ทั้งไฟล์: --cream = พื้นหน้า, --paper = พื้นการ์ด, --ink = สีตัวหนังสือ */
   :root {
-    --cream: #F6F1E7;
-    --paper: #FFFDF8;
-    --line: #E4DACA;
-    --ink: #141210;
-    --ink-soft: #5E564B;
-    --red: #B01116;
-    --red-deep: #8A0B10;
-    --display: 'Pattaya', 'Kanit', 'Thonburi', system-ui, sans-serif;
-    --body: 'Kanit', 'Noto Sans Thai', 'Thonburi', system-ui, sans-serif;
-    --note: 'Sriracha', 'Kanit', 'Thonburi', cursive;
+    color-scheme: dark;
+    --cream: #16120F;
+    --paper: #221C18;
+    --paper-2: #2A211C;
+    --line: #3A302A;
+    --ink: #F4EDE4;
+    --ink-soft: #C9BCAE;
+    --ink-mute: #A89A8B;
+    --red: #E24A3B;
+    --red-deep: #FFB4A8;
+    --gold: #D9B46A;
+    --gold-ink: #16120F;
+    --display: 'Noto Serif Thai', 'Thonburi', serif;
+    --body: 'IBM Plex Sans Thai', 'Noto Sans Thai', 'Thonburi', system-ui, sans-serif;
+    --note: 'Noto Serif Thai', 'Thonburi', serif;
     /* แถบสีแดงขอบขรุขระแบบรอยพู่กัน */
     --brush: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 60' preserveAspectRatio='none'%3E%3Cpath fill='%23B01116' d='M9 15 5 9 22 10 18 5 62 6 140 3 232 6 284 2 297 9 289 15 299 22 290 30 298 39 288 45 296 53 280 52 284 58 238 55 150 57 70 55 22 58 26 52 6 55 12 47 2 41 11 34 3 26 12 21Z'/%3E%3C/svg%3E");
     --tabs-h: 3.5rem;
@@ -353,6 +360,125 @@
   .track-go::after { content: '›'; font-size: 1.375rem; line-height: 1; margin-top: -.125rem; }
   .track-row:active .track-go { transform: translateY(2px); box-shadow: 0 1px 0 var(--red-deep); }
 
+
+  /* ===== แบบ C: ส่วนที่ต่างจากหน้าตาเดิม ===== */
+  /* หัวร้าน: รูปแผงย่าง ไล่สีเข้มลงด้านล่าง ชื่อร้านตัวมีเชิงชิดซ้าย */
+  .hero { text-align: left; }
+  .hero .wrap { padding: 0 0 .75rem; }
+  .hero-pic { position: relative; min-height: 12.5rem; padding: .875rem 1rem .5rem; display: flex; flex-direction: column; justify-content: space-between;
+    background: linear-gradient(rgb(22 18 15 / .35), rgb(22 18 15 / .05) 40%, var(--cream)), url("https://images.unsplash.com/photo-1521022887356-1db35c7bbf1f?w=1200&h=600&fit=crop&q=75&fm=jpg") center / cover no-repeat, var(--paper); }
+  .motto { color: #F1D49A; border-bottom: 0; padding-bottom: 0; text-shadow: 0 1px 3px rgb(0 0 0 / .6); }
+  .lang-btn { border: 0; background: rgb(22 18 15 / .6); color: var(--ink); }
+  .table-note { transform: none; border-bottom-color: var(--gold); color: var(--ink); text-shadow: 0 1px 3px rgb(0 0 0 / .6); }
+  .hero h1 { margin: 0; font-weight: 700; font-size: clamp(2.25rem, 10vw, 3rem); line-height: 1.5; transform: none; text-shadow: 0 2px 8px rgb(0 0 0 / .45);
+    --flame-x: 52%; --flame-drop: .5em; --flame-size: .5em; }
+  .flame { transform: translate(-50%, -100%); }
+  /* การ์ดโปร */
+  .promo { display: flex; align-items: center; gap: .875rem; margin: .25rem 1rem 0; padding: .75rem .875rem; border-radius: 18px; background: var(--paper-2); }
+  .ring { --p: 0; position: relative; flex: none; width: 3.5rem; height: 3.5rem; border-radius: 50%; display: flex; align-items: baseline; justify-content: center; padding-top: 1.05rem;
+    background: conic-gradient(var(--gold) calc(var(--p) * 1%), var(--line) 0); }
+  .ring::before { content: ''; position: absolute; inset: 4px; border-radius: 50%; background: var(--paper-2); }
+  .ring b, .ring small { position: relative; font-variant-numeric: tabular-nums; }
+  .ring b { font-size: 1.25rem; font-weight: 700; color: var(--gold); line-height: 1; }
+  .ring small { font-size: .75rem; color: var(--ink-mute); }
+  .ring.is-full { background: var(--gold); }
+  .promo-txt { min-width: 0; }
+  .price-banner { display: inline; margin: 0; padding: 0; transform: none; font-family: var(--display); font-style: normal; font-weight: 700; font-size: 1.0625rem; color: var(--ink); }
+  .price-banner b { font-size: 1em; vertical-align: baseline; padding: 0; }
+  .deal { display: inline; margin: 0; font-family: var(--display); font-style: normal; font-weight: 700; font-size: 1.0625rem; line-height: 1.4; }
+  .price-banner:not([hidden]) + .deal::before { content: ' · '; color: var(--ink-mute); }
+  .deal em { color: var(--gold); }
+  .promo-hint { margin: .125rem 0 0; font-size: .9375rem; color: var(--ink-soft); }
+  .howto { margin: .625rem 1rem 0; font-size: .875rem; color: var(--ink-mute); }
+  .again { margin: .625rem 1rem 0; }
+  .btn-line { border: 1px solid var(--line); color: var(--ink); }
+  .closed-note { background: var(--red); }
+  /* แถบหมวด: ขีดเส้นใต้สีทองที่หมวดที่ดูอยู่ */
+  .tabs { background: rgb(22 18 15 / .94); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border-bottom-color: #2E2621; }
+  .tabs .wrap { gap: 1.375rem; }
+  .tab { min-height: var(--tabs-h); padding: 0; border: 0; border-radius: 0; border-bottom: 2px solid transparent; color: var(--ink-mute); font-size: 1rem; }
+  .tab[aria-current="true"] { background: transparent; color: var(--ink); border-bottom-color: var(--gold); font-weight: 600; }
+  /* เมนู: การ์ด 2 คอลัมน์ รูปใหญ่ */
+  .cat h2 { padding: 1.25rem 1rem .75rem; }
+  .cat h2 span { padding: 0; transform: none; font-family: var(--display); font-style: normal; font-size: 1.25rem; color: var(--ink); }
+  .items { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem .75rem; padding: 0 1rem; background: transparent; border: 0; }
+  .item { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "tile" "txt"; align-items: stretch; gap: .25rem; padding: 0; min-height: 0; border: 0; }
+  .item.in-cart { box-shadow: none; }
+  .item-tile { grid-area: tile; position: relative; display: grid; place-items: center; aspect-ratio: 1 / .9; border-radius: 18px; background: var(--paper); overflow: hidden; }
+  .item.in-cart .item-tile::after { content: ''; position: absolute; inset: 0; z-index: 1; border-radius: inherit; box-shadow: inset 0 0 0 2px var(--gold); pointer-events: none; }
+  .item-pic { width: 72%; height: 72%; }
+  .item-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .item.has-photo .item-pic { visibility: hidden; }
+  .item.is-out .item-photo { opacity: .4; filter: grayscale(1); }
+  .item-txt { grid-area: txt; padding: .25rem .125rem 0; }
+  .item-name { font-size: .9375rem; line-height: 1.35; }
+  .item-price { color: var(--gold); font-weight: 600; }
+  .item.is-out .item-price { color: var(--ink-mute); }
+  .item-price small { display: block; margin: 0; color: var(--ink-mute); }
+  /* ปุ่ม + − วางทับมุมล่างขวาของรูป (อยู่ช่องเดียวกับรูปในกริด) */
+  .item .stepper { grid-area: tile; align-self: end; justify-self: end; margin: .375rem; position: relative; z-index: 1; gap: .125rem; }
+  .round { width: 2.625rem; height: 2.625rem; }
+  .round.plus { background: var(--ink); color: var(--gold-ink); font-weight: 600; }
+  .round.plus:active { background: #fff; }
+  .round.minus { background: rgb(22 18 15 / .85); color: var(--ink); border: 1px solid var(--ink-mute); }
+  .qty { min-width: 1.75rem; height: 1.75rem; border-radius: 999px; background: var(--gold); color: var(--gold-ink); font-weight: 700; font-size: 1rem; line-height: 1.75rem; }
+  .soldout { background: rgb(22 18 15 / .85); border: 1px solid var(--ink-mute); color: var(--ink-soft); }
+  .pic-note { margin: 1.25rem 1rem 0; font-size: .8125rem; color: var(--ink-mute); text-align: center; }
+  /* แถบด้านล่าง: ปุ่มทองเต็มแถบ */
+  .orderbar { background: linear-gradient(rgb(22 18 15 / 0), var(--cream) 40%); color: var(--ink); }
+  .orderbar .wrap { margin: 0 auto; padding: .75rem 1rem .875rem; }
+  .orderbar .wrap { background: var(--gold); color: var(--gold-ink); border-radius: 18px; margin: 0 .75rem .625rem; max-width: 33.5rem; }
+  @media (min-width: 37rem) { .orderbar .wrap { margin: 0 auto .625rem; } }
+  .orderbar .sum b { font-style: normal; font-weight: 700; font-size: 1.375rem; }
+  .orderbar .btn { background: var(--gold-ink); color: var(--gold); }
+  .orderbar :focus-visible { outline-color: var(--gold-ink); }
+  .nudge { margin: 0 .75rem .375rem; border-radius: 12px; background: var(--paper-2); color: var(--ink); }
+  @media (min-width: 37rem) { .nudge { max-width: 33.5rem; margin: 0 auto .375rem; } }
+  /* แผ่นด้านล่างทุกแผ่น */
+  dialog { background: var(--paper); box-shadow: inset 0 1px 0 var(--line); }
+  dialog::backdrop { background: rgb(0 0 0 / .7); }
+  .sheet-head h2, .done h2, .sending-title, .deal-title { font-weight: 700; font-size: 1.5rem; }
+  .total b, .past-foot span, .past-q, .track-q { font-style: normal; font-weight: 700; }
+  .total b { color: var(--gold); }
+  .spice span { border: 1px solid var(--line); background: var(--cream); }
+  .spice input:checked + span { background: var(--gold); border-color: var(--gold); color: var(--gold-ink); }
+  .field input, .field textarea { border: 1px solid var(--line); background: var(--cream); color: var(--ink); }
+  .field input::placeholder, .field textarea::placeholder { color: var(--ink-mute); }
+  .photo-box img { border: 1px solid var(--line); }
+  .photo-btn { background: var(--ink); color: var(--gold-ink); }
+  .photo-btn.retake { background: transparent; color: var(--ink); border: 1px solid var(--ink-mute); }
+  .btn { background: var(--paper-2); }
+  .btn.red { background: var(--gold); color: var(--gold-ink); }
+  .btn.dark { background: var(--ink); color: var(--gold-ink); }
+  .btn.ghost { border: 1px solid var(--ink-mute); }
+  .error, .done .cancelled, .slip-msg.is-bad { background: #3D1A16; color: #FFB4A8; }
+  .slip-msg, .ahead { background: #3A2E1A; color: #F6D28E; }
+  .sending { background: rgb(34 28 24 / .97); }
+  .sending-grill .bar { stroke: var(--ink-mute); }
+  .sending-fill { background: repeating-linear-gradient(-45deg, var(--gold) 0 10px, #B89452 10px 20px); background-size: 34px 100%; }
+  .past, .pay { border: 0; background: var(--paper-2); }
+  .pay-qr { border-radius: 12px; }
+  .slip-btn.quiet-btn { border: 1px solid var(--ink-mute); }
+  /* แผ่น "ส่งออเดอร์แล้ว": เลขคิวในวงทอง */
+  .done .queue { margin: 1rem auto 1.25rem; width: 11rem; height: 11rem; padding: 0; border-radius: 50%; border: 3px solid var(--gold); background: none; color: var(--ink);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; transform: none; }
+  .done .queue small { font-style: normal; font-weight: 500; color: var(--ink-soft); }
+  .done .queue b { font-style: normal; font-weight: 700; font-size: 3.5rem; color: var(--ink); }
+  .prog-fill { background-color: var(--gold); }
+  .prog-steps li.is-now .prog-ic { background: var(--red); border-color: var(--red); }
+  .close-x { background: var(--paper-2); }
+  /* แถวคิวที่สั่งไว้ ใต้หัวร้าน */
+  .track { margin: .625rem 1rem 0; border: 0; border-radius: 16px; background: var(--red); color: #fff; }
+  .track .wrap { padding: .125rem .875rem; }
+  .track-row + .track-row { border-top-color: rgb(255 255 255 / .25); }
+  .track-a { color: #FFE3DE; }
+  .track-go { background: rgb(22 18 15 / .35); color: #fff; box-shadow: none; }
+  .track-row:active .track-go { box-shadow: none; }
+  #dealPop { background: var(--paper); }
+  .deal-title { color: var(--gold); }
+  .deal-dots li { background: var(--cream); }
+  .deal-dots li.on { background: var(--gold); border-color: var(--gold); }
+
   @media (prefers-reduced-motion: no-preference) {
     html { scroll-behavior: smooth; }
     .round, .tab, .spice span { transition: background-color .12s; }
@@ -363,16 +489,26 @@
 
 <header class="hero">
   <div class="wrap">
-    <div class="hero-top">
-      <p class="motto">Mala street food<br>good mood</p>
-      <div class="hero-right">
-        <p class="table-note" id="plaque" hidden></p>
-        <button class="lang-btn" id="langBtn" type="button" lang="en" aria-label="Switch to English">EN</button>
+    <!-- ภาพหัวร้าน (แบบ C): รูปแผงย่าง โดย Ian Valerio จาก Unsplash ใช้ได้ฟรีเชิงการค้า เปลี่ยนรูปได้ที่ .hero-pic ใน style ด้านบน -->
+    <div class="hero-pic">
+      <div class="hero-top">
+        <p class="motto">Mala street food<br>good mood</p>
+        <div class="hero-right">
+          <p class="table-note" id="plaque" hidden></p>
+          <button class="lang-btn" id="langBtn" type="button" lang="en" aria-label="Switch to English">EN</button>
+        </div>
+      </div>
+      <h1><svg class="flame" viewBox="0 0 64 80" aria-hidden="true"><path fill="#E24A3B" d="M33 3C37 18 53 27 53 49 53 65 44 77 32 77 20 77 11 65 11 49 11 39 17 32 20 23 22 30 24 34 27 36 29 26 29 14 33 3Z"/><path fill="#F28C1B" d="M32 29C35 40 45 45 45 57 45 67 39 73 32 73 25 73 19 67 19 57 19 51 22 46 24 42 25 45 27 48 29 49 30 42 30 36 32 29Z"/><path fill="#FFFDF8" d="M32 50C34 55 38 58 38 64 38 69 35 72 32 72 29 72 26 69 26 64 26 59 30 56 32 50Z"/></svg><span id="shopName"></span></h1>
+    </div>
+    <!-- การ์ดโปร: ราคาต่อไม้ เงื่อนไขซื้อครบแถม และวงแหวนบอกว่าเลือกไปกี่ไม้แล้ว อัปเดตทุกครั้งที่กด + − -->
+    <div class="promo" id="promoBox">
+      <div class="ring" id="promoRing" aria-hidden="true" hidden><b id="ringNum">0</b><small id="ringOf"></small></div>
+      <div class="promo-txt">
+        <p class="price-banner" id="priceBanner" hidden></p>
+        <p class="deal" id="dealLine" hidden><span id="dealText"></span></p>
+        <p class="promo-hint" id="promoHint" hidden></p>
       </div>
     </div>
-    <h1><svg class="flame" viewBox="0 0 64 80" aria-hidden="true"><path fill="#B01116" d="M33 3C37 18 53 27 53 49 53 65 44 77 32 77 20 77 11 65 11 49 11 39 17 32 20 23 22 30 24 34 27 36 29 26 29 14 33 3Z"/><path fill="#F28C1B" d="M32 29C35 40 45 45 45 57 45 67 39 73 32 73 25 73 19 67 19 57 19 51 22 46 24 42 25 45 27 48 29 49 30 42 30 36 32 29Z"/><path fill="#FFFDF8" d="M32 50C34 55 38 58 38 64 38 69 35 72 32 72 29 72 26 69 26 64 26 59 30 56 32 50Z"/></svg><span id="shopName"></span></h1>
-    <p class="brush price-banner" id="priceBanner" hidden></p>
-    <p class="deal" id="dealLine" hidden><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M26 4 15 9M24 14H8M26 24 15 19" fill="none" stroke="#B01116" stroke-width="3.5" stroke-linecap="round"/></svg><span id="dealText"></span><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M26 4 15 9M24 14H8M26 24 15 19" fill="none" stroke="#B01116" stroke-width="3.5" stroke-linecap="round"/></svg></p>
     <p class="howto"><span class="nw">เลือกของที่อยากกิน</span> <span class="nw">ใส่จำนวน</span> <span class="nw">แล้วกดส่งออเดอร์</span></p>
     <p class="again" id="againRow" hidden><button class="btn-line" id="openHistory" type="button">ดูที่เคยสั่ง แล้วสั่งแบบเดิม</button></p>
     <p class="again" id="loginRow" hidden><button class="btn-line" id="lineLogin" type="button">เข้าสู่ระบบด้วย LINE เพื่อดูที่เคยสั่ง</button></p>
@@ -790,6 +926,22 @@
     const hit = ICON_GUESS.find(g => g[0].test(n));
     return hit ? hit[1] : 'generic';
   }
+  // รูปถ่ายของเมนู ใช้แทนรูปวาดเมื่อมีรูป (โหลดรูปไม่ได้ จะกลับไปใช้รูปวาดเอง)
+  // ตอนนี้เป็นรูปจาก Unsplash (Unsplash License: ใช้ฟรีเชิงการค้า ไม่ต้องใส่ชื่อช่างภาพ) ดึงจากเว็บ Unsplash โดยตรง ตัดเป็นสี่เหลี่ยมจัตุรัส 600 จุด
+  // ร้านถ่ายรูปเองแล้ว: วางไฟล์ไว้ที่ assets/menu/ แล้วใส่ชื่อไฟล์ไม่ต้องมี .jpg เช่น 'samchan' ถ้าเป็นลิงก์เต็ม (ขึ้นต้น https) จะใช้ลิงก์นั้นตรงๆ
+  const UNSPLASH = id => 'https://images.unsplash.com/photo-' + id + '?w=600&h=600&fit=crop&q=75&fm=jpg';
+  const PHOTO_SAUSAGE = UNSPLASH('1633578094666-cf5c46ce2c2a');     // ไส้กรอกย่างเสียบไม้ โดย Salman Mukti
+  const PHOTO_CORN = UNSPLASH('1601284702796-a27ffd3eff3c');        // ข้าวโพดย่าง โดย Robert Krčmar
+  const MENU_PHOTOS = {
+    'ไส้กรอกแดง': PHOTO_SAUSAGE, 'ไส้กรอกแดงแหลมทอง': PHOTO_SAUSAGE,
+    'หน่อไม้ฝรั่งพันสามชั้น': UNSPLASH('1783788357802-15102a0fb6b4'),   // หน่อไม้ฝรั่งพันเบคอน โดย HYEWON HWANG
+    'สันในไก่เสียบไม้': UNSPLASH('1705359573325-f2006d5e459f'),         // ไก่เสียบไม้ โดย Mihir Sabnis
+    'ข้าวโพด': PHOTO_CORN, 'ข้าวโพดเสียบไม้': PHOTO_CORN, 'ข้าวโพดหวาน': PHOTO_CORN,
+  };
+  function menuPhoto(name) {
+    const v = MENU_PHOTOS[String(name || '').trim()] || '';
+    return !v ? '' : /^https:\/\//.test(v) ? v : 'assets/menu/' + v + '.jpg';
+  }
 
   function renderMenu() {
     const cats = [];
@@ -807,17 +959,21 @@
       `<button class="tab" type="button" data-cat="${n}">${esc(c.name)}</button>`).join('');
     $('menu').innerHTML = cats.map((c, n) => `
       <section class="cat" id="cat-${n}" data-cat="${n}">
-        <h2><span class="brush">${esc(c.name)}</span></h2>
+        <h2><span>${esc(c.name)}</span></h2>
         <ul class="items">${c.rows.map(i => {
           const m = state.menu[i];
           const price = money(m.price) + (m.unit ? ' ต่อ' + esc(m.unit) : '') + (promoOn() && !m.promo ? '<small>ไม่ร่วมโปร</small>' : '');
-          return `<li class="item${m.available ? '' : ' is-out'}${state.cart[m.name] ? ' in-cart' : ''}" id="item-${i}">
-            <svg class="item-pic" aria-hidden="true" focusable="false"><use href="menu-icons.svg#${menuIcon(m.name)}"></use></svg>
-            <div><span class="item-name">${esc(m.name)}</span><span class="item-price">${price}</span></div>
+          // ถ้าเมนูนี้มีรูปถ่าย วางรูปทับรูปวาดไว้ โหลดรูปไม่ได้เมื่อไหร่ รูปถ่ายจะหายไปเอง เหลือรูปวาดแทน
+          const photo = menuPhoto(m.name);
+          return `<li class="item${m.available ? '' : ' is-out'}${state.cart[m.name] ? ' in-cart' : ''}${photo ? ' has-photo' : ''}" id="item-${i}">
+            <span class="item-tile"><svg class="item-pic" aria-hidden="true" focusable="false"><use href="menu-icons.svg#${menuIcon(m.name)}"></use></svg>${photo
+              ? `<img class="item-photo" src="${esc(photo)}" alt="" loading="lazy" decoding="async" onerror="this.closest('.item').classList.remove('has-photo');this.remove()">` : ''}</span>
+            <div class="item-txt"><span class="item-name">${esc(m.name)}</span><span class="item-price">${price}</span></div>
             <div class="stepper" id="st-${i}">${stepperHTML(i)}</div>
           </li>`;
         }).join('')}</ul>
-      </section>`).join('');
+      </section>`).join('') +
+      (state.menu.some(m => menuPhoto(m.name)) ? '<p class="pic-note">รูปถ่ายบางเมนูเป็นภาพประกอบ ของจริงอาจต่างเล็กน้อย</p>' : '');
     watchSections();
   }
 
@@ -839,6 +995,8 @@
     if (common != null) $('priceBanner').innerHTML = `${esc(promoUnit())}ละ <b>${esc(common.toLocaleString('th-TH'))}</b> บาท`;
     $('dealLine').hidden = !promoOn();
     if (promoOn()) $('dealText').innerHTML = `ซื้อ ${Number(state.promo.buy)} <em>ฟรี ${Number(state.promo.free)}</em>`;
+    $('promoBox').hidden = common == null && !promoOn();
+    renderRing();
   }
 
   function renderBar() {
@@ -851,6 +1009,24 @@
     $('barTotal').textContent = money(cartTotal());
     $('nudge').textContent = deal.hint;
     $('nudge').hidden = !deal.hint;
+    renderRing(deal);
+  }
+
+  // วงแหวนในการ์ดโปร: เลือกไม้ที่ร่วมโปรไปกี่ไม้แล้วในรอบนี้ (เช่น 7/10) และข้อความว่าอีกกี่ไม้ได้ฟรี
+  function renderRing(deal) {
+    const on = promoOn();
+    $('promoRing').hidden = !on;
+    $('promoHint').hidden = !on;
+    if (!on) return;
+    const { buy, free } = state.promo, group = buy + free, unit = promoUnit();
+    const d = deal || promoInfo();
+    const r = d.n % group;
+    const got = Math.min(r, buy);
+    $('ringNum').textContent = String(got);
+    $('ringOf').textContent = '/' + buy;
+    $('promoRing').style.setProperty('--p', String(Math.round(got / buy * 100)));
+    $('promoRing').classList.toggle('is-full', r >= buy);
+    $('promoHint').textContent = d.hint || `ครบ ${buy} ${unit} ฟรี ${free} ${unit}`;
   }
 
   // ไฮไลต์แถบหมวดตามตำแหน่งที่เลื่อนอยู่
@@ -1638,7 +1814,7 @@
     'ยังไม่เคยสั่งกับร้านนี้ผ่าน LINE': 'No orders with us on LINE yet', 'ดูประวัติไม่ได้ ตรวจสัญญาณอินเทอร์เน็ตแล้วลองอีกครั้ง': 'Could not load past orders. Check your internet and try again.',
     'รายการในออเดอร์นี้ไม่มีขายแล้ว': 'The items in this order are no longer sold',
     'เปลี่ยนรายการที่เลือกไว้ เป็นรายการของออเดอร์นี้ใช่ไหม': 'Replace your current items with the items from this order?',
-    'ตัวอย่างประวัติ (โหมดทดลอง)': 'Sample history (demo mode)', 'ดู': 'View', 'ดูสถานะ': 'View status', 'ดู QR จ่ายเงิน': 'Show payment QR',
+    'ตัวอย่างประวัติ (โหมดทดลอง)': 'Sample history (demo mode)', 'รูปถ่ายบางเมนูเป็นภาพประกอบ ของจริงอาจต่างเล็กน้อย': 'Some photos are for illustration. The real dish may look a little different.', 'ดู': 'View', 'ดูสถานะ': 'View status', 'ดู QR จ่ายเงิน': 'Show payment QR',
     'ยังไม่ได้แนบรูป หรือรูปใหญ่เกินไป ลองถ่ายใหม่อีกครั้ง': 'No photo attached, or it is too large. Please take it again.',
     'เปิดเมนูนี้จากในแอป LINE อีกครั้ง แล้วจะดูที่เคยสั่งได้': 'Open this menu from the LINE app again to see past orders.',
     'ระบบขัดข้องชั่วคราว ลองอีกครั้ง': 'Something went wrong. Please try again.', 'ไม่พบออเดอร์นี้': 'Order not found',
@@ -1657,6 +1833,7 @@
     [/^(฿[\d,.]+) ต่อ(\S+)$/, m => m[1] + ' / ' + unitEn(m[2], 1)],
     [/^(\S+)ละ$/, m => 'Per ' + unitEn(m[1], 1)],
     [/^ซื้อ (\d+)$/, m => 'Buy ' + m[1]],
+    [/^ครบ (\d+) (\S+) ฟรี (\d+) (\S+)$/, m => 'Buy ' + m[1] + ', get ' + m[3] + ' ' + unitEn(m[4], m[3]) + ' free'],
     [/^ฟรี (\d+)$/, m => 'get ' + m[1] + ' FREE'],
     [/^เลือกเพิ่มได้อีก (\d+) (\S+) ฟรี$/, m => 'Pick ' + m[1] + ' more ' + unitEn(m[2], m[1]) + ' for free'],
     [/^(?:ได้ฟรี (\d+) (\S+?)แล้ว ?)?(?:อีก (\d+) (\S+) ได้ฟรี(เพิ่ม)? (\d+) (\S+))?$/, m => (m[1] || m[3]) ? [
