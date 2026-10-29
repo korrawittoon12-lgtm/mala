@@ -6,7 +6,7 @@
 <title>เมนู</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Noto+Serif+Thai:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Noto+Serif+Thai:wght@600;700&family=Kanit:wght@600;800&display=swap" rel="stylesheet">
 <style>
   /* หน้าตาแบบ C (โทนเข้ม พรีเมียม) เลือกเมื่อ 26/10/2026: พื้นเข้ม สีทองเป็นสีเด่น ตัวหนังสือหัวข้อแบบมีเชิง
      ชื่อสีเดิมยังใช้อยู่ทั้งไฟล์: --cream = พื้นหน้า, --paper = พื้นการ์ด, --ink = สีตัวหนังสือ */
@@ -483,13 +483,43 @@
     html { scroll-behavior: smooth; }
     .round, .tab, .spice span { transition: background-color .12s; }
   }
+  /* ===== แบบ 7 (เลือกเมื่อ 29/10/2026): หัวร้านใช้รูปอาหาร ชื่อร้าน และป้ายแดงจากโปสเตอร์ของร้าน ===== */
+  .hero-pic { min-height: 0; padding: .75rem 1rem 1rem; justify-content: flex-start; gap: .25rem;
+    background: linear-gradient(rgb(22 18 15 / .8), rgb(22 18 15 / .25) 48%, var(--cream)), url("hero-food.svg") center / cover no-repeat, var(--paper); }
+  .hero-logo { display: block; width: min(64%, 16rem); height: auto; margin: .375rem 0 0 -.25rem; filter: drop-shadow(0 2px 6px rgb(0 0 0 / .55)); }
+  .hero-logo[hidden] { display: none; }
+  .hero.has-logo h1 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+  .hero-deal { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem .75rem; margin-top: .625rem; }
+  .hero-deal .price-banner { display: inline-block; margin: 0; padding: .5rem 1.875rem .625rem; transform: rotate(-3deg); white-space: nowrap;
+    background: url("hero-brush.svg") center / 100% 100% no-repeat; color: #fff; text-shadow: none;
+    font-family: 'Kanit', var(--body); font-style: normal; font-weight: 600; font-size: 1.375rem; line-height: 1.2; }
+  .hero-deal .price-banner b { font-size: 1.9em; font-weight: 800; vertical-align: -.1em; padding: 0 .08em; }
+  .hero-deal .deal { display: inline-block; margin: 0 .25rem 0 auto; padding: .375rem .75rem; border-radius: 10px; transform: rotate(-6deg);
+    background: var(--ink); color: #16120F; font-family: 'Kanit', var(--body); font-style: normal; font-weight: 600; font-size: 1.1875rem; line-height: 1.3; white-space: nowrap;
+    box-shadow: 0 3px 10px rgb(0 0 0 / .35); }
+  .hero-deal .deal::before, .hero-deal .price-banner:not([hidden]) + .deal::before { content: none; }
+  .hero-deal .deal em { color: #B01116; font-style: normal; }
+  /* ตัวนับโปร: ตัวเลขใหญ่ 7/10 กับแถบเติมสี */
+  .promo { margin: .5rem 1rem 0; padding: .75rem .875rem; gap: .875rem; background: var(--paper); }
+  .ring { width: auto; height: auto; padding: 0; border-radius: 0; background: none; align-items: baseline; font-family: 'Kanit', var(--body); }
+  .ring::before { content: none; }
+  .ring b { font-size: 2rem; font-weight: 800; color: var(--ink); }
+  .ring small { font-size: 1.0625rem; color: var(--ink-mute); }
+  .ring.is-full { background: none; }
+  .ring.is-full b { color: var(--gold); }
+  .promo-txt { flex: 1; }
+  .promo-bar { height: .75rem; border-radius: 999px; background: var(--line); overflow: hidden; }
+  .promo-bar i { display: block; height: 100%; width: calc(var(--p, 0) * 1%); border-radius: inherit; background: linear-gradient(90deg, var(--red), #F28C1B); transition: width .25s ease; }
+  .promo.is-full .promo-bar i { background: var(--gold); }
+  .promo-hint { margin: .375rem 0 0; font-size: 1rem; font-weight: 600; color: var(--ink); }
+  @media (prefers-reduced-motion: reduce) { .promo-bar i { transition: none; } }
 </style>
 </head>
 <body>
 
 <header class="hero">
   <div class="wrap">
-    <!-- ภาพหัวร้าน (แบบ C): รูปแผงย่าง โดย Ian Valerio จาก Unsplash ใช้ได้ฟรีเชิงการค้า เปลี่ยนรูปได้ที่ .hero-pic ใน style ด้านบน -->
+    <!-- ภาพหัวร้าน (แบบ 7): รูปอาหาร ชื่อร้านลายพู่กัน และป้ายแดง ตัดมาจากโปสเตอร์ของร้าน (ไฟล์ hero-food.svg hero-logo.svg hero-brush.svg) -->
     <div class="hero-pic">
       <div class="hero-top">
         <p class="motto">Mala street food<br>good mood</p>
@@ -499,13 +529,18 @@
         </div>
       </div>
       <h1><svg class="flame" viewBox="0 0 64 80" aria-hidden="true"><path fill="#E24A3B" d="M33 3C37 18 53 27 53 49 53 65 44 77 32 77 20 77 11 65 11 49 11 39 17 32 20 23 22 30 24 34 27 36 29 26 29 14 33 3Z"/><path fill="#F28C1B" d="M32 29C35 40 45 45 45 57 45 67 39 73 32 73 25 73 19 67 19 57 19 51 22 46 24 42 25 45 27 48 29 49 30 42 30 36 32 29Z"/><path fill="#FFFDF8" d="M32 50C34 55 38 58 38 64 38 69 35 72 32 72 29 72 26 69 26 64 26 59 30 56 32 50Z"/></svg><span id="shopName"></span></h1>
+      <img class="hero-logo" id="heroLogo" src="hero-logo.svg" alt="" width="480" height="170" hidden>
+      <!-- ป้ายแดงราคาต่อไม้ กับป้ายเงื่อนไขซื้อครบแถม: ตัวเลขดึงจากเมนูและโปรในชีต เปลี่ยนในชีตแล้วป้ายเปลี่ยนตาม -->
+      <div class="hero-deal">
+        <p class="price-banner" id="priceBanner" hidden></p>
+        <p class="deal" id="dealLine" hidden><span id="dealText"></span></p>
+      </div>
     </div>
-    <!-- การ์ดโปร: ราคาต่อไม้ เงื่อนไขซื้อครบแถม และวงแหวนบอกว่าเลือกไปกี่ไม้แล้ว อัปเดตทุกครั้งที่กด + − -->
+    <!-- ตัวนับโปร: เลือกไปกี่ไม้แล้ว (เช่น 7/10) แถบเติมสี และอีกกี่ไม้ได้ฟรี อัปเดตทุกครั้งที่กด + − -->
     <div class="promo" id="promoBox">
       <div class="ring" id="promoRing" aria-hidden="true" hidden><b id="ringNum">0</b><small id="ringOf"></small></div>
       <div class="promo-txt">
-        <p class="price-banner" id="priceBanner" hidden></p>
-        <p class="deal" id="dealLine" hidden><span id="dealText"></span></p>
+        <div class="promo-bar" aria-hidden="true"><i></i></div>
         <p class="promo-hint" id="promoHint" hidden></p>
       </div>
     </div>
@@ -1005,7 +1040,7 @@
     if (common != null) $('priceBanner').innerHTML = `${esc(promoUnit())}ละ <b>${esc(common.toLocaleString('th-TH'))}</b> บาท`;
     $('dealLine').hidden = !promoOn();
     if (promoOn()) $('dealText').innerHTML = `ซื้อ ${Number(state.promo.buy)} <em>ฟรี ${Number(state.promo.free)}</em>`;
-    $('promoBox').hidden = common == null && !promoOn();
+    $('promoBox').hidden = !promoOn();
     renderRing();
   }
 
@@ -1034,8 +1069,9 @@
     const got = Math.min(r, buy);
     $('ringNum').textContent = String(got);
     $('ringOf').textContent = '/' + buy;
-    $('promoRing').style.setProperty('--p', String(Math.round(got / buy * 100)));
+    $('promoBox').style.setProperty('--p', String(Math.round(got / buy * 100)));
     $('promoRing').classList.toggle('is-full', r >= buy);
+    $('promoBox').classList.toggle('is-full', r >= buy);
     $('promoHint').textContent = d.hint || `ครบ ${buy} ${unit} ฟรี ${free} ${unit}`;
   }
 
@@ -1741,9 +1777,14 @@
 
   // ชื่อร้านบนหัว: ลูกไฟใช้แทนวรรณยุกต์ตัวแรกของชื่อ (ไม้เอกของ "ม่" ใน หม่าล่าซัง) แบบเดียวกับโปสเตอร์ของร้าน
   // จึงเอาวรรณยุกต์ตัวนั้นออกจากตัวหนังสือที่แสดง แล้วให้ลูกไฟเกาะอยู่เหนือตัวอักษรตัวเดียวกัน
+  const POSTER_NAME = 'หม่าล่าซัง';
   function renderShopName() {
     const name = String(CFG.SHOP_NAME), sn = $('shopName'), flame = document.querySelector('.hero .flame');
     sn.parentNode.setAttribute('aria-label', name);       // โปรแกรมอ่านหน้าจอยังอ่านชื่อร้านเต็ม
+    // ชื่อร้านลายพู่กันจากโปสเตอร์ ใช้เมื่อชื่อร้านตรงกับโปสเตอร์ ถ้าเปลี่ยนชื่อร้านใน config.js หัวร้านจะกลับไปใช้ตัวหนังสือธรรมดา
+    const logo = name === POSTER_NAME;
+    $('heroLogo').hidden = !logo;
+    document.querySelector('.hero').classList.toggle('has-logo', logo);
     const tone = /[\u0E48-\u0E4B]/.exec(name);
     let start = tone ? tone.index - 1 : 0, end = tone ? tone.index : 1;
     // ถ้าใต้วรรณยุกต์มีสระบน (เช่น ี ื) ให้ถอยไปเริ่มที่พยัญชนะ
