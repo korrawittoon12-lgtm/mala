@@ -928,19 +928,29 @@
   }
   // รูปถ่ายของเมนู ใช้แทนรูปวาดเมื่อมีรูป (โหลดรูปไม่ได้ จะกลับไปใช้รูปวาดเอง)
   // ตอนนี้เป็นรูปจาก Unsplash (Unsplash License: ใช้ฟรีเชิงการค้า ไม่ต้องใส่ชื่อช่างภาพ) ดึงจากเว็บ Unsplash โดยตรง ตัดเป็นสี่เหลี่ยมจัตุรัส 600 จุด
-  // ร้านถ่ายรูปเองแล้ว: วางไฟล์ไว้ที่ assets/menu/ แล้วใส่ชื่อไฟล์ไม่ต้องมี .jpg เช่น 'samchan' ถ้าเป็นลิงก์เต็ม (ขึ้นต้น https) จะใช้ลิงก์นั้นตรงๆ
+  // รูปของร้านเอง: วางไฟล์ไว้ที่ assets/menu/ แล้วใส่ชื่อไฟล์ เช่น 'samchan.webp' (ไม่ใส่นามสกุล = .jpg) ถ้าเป็นลิงก์เต็ม (ขึ้นต้น https) จะใช้ลิงก์นั้นตรงๆ
   const UNSPLASH = id => 'https://images.unsplash.com/photo-' + id + '?w=600&h=600&fit=crop&q=75&fm=jpg';
-  const PHOTO_SAUSAGE = UNSPLASH('1633578094666-cf5c46ce2c2a');     // ไส้กรอกย่างเสียบไม้ โดย Salman Mukti
   const PHOTO_CORN = UNSPLASH('1601284702796-a27ffd3eff3c');        // ข้าวโพดย่าง โดย Robert Krčmar
   const MENU_PHOTOS = {
-    'ไส้กรอกแดง': PHOTO_SAUSAGE, 'ไส้กรอกแดงแหลมทอง': PHOTO_SAUSAGE,
+    'สามชั้นเสียบไม้': 'samchan.webp',                                   // ร้านสร้างด้วย ChatGPT (26/10/2026)
+    'หมูสันคอเสียบไม้': 'moosankor.webp',                                // ร้านสร้างด้วย ChatGPT (29/10/2026)
+    'หมึกกรอบ': 'muekkrob.webp',                                         // ร้านสร้างด้วย ChatGPT (29/10/2026)
+    'ปลาดอลลี่': 'dory.webp',                                            // ร้านสร้างด้วย ChatGPT (29/10/2026)
+    'ท้องปลาแซลมอน': 'salmon.webp', 'ท้องปลาแซลมอล': 'salmon.webp',      // ร้านสร้างด้วย ChatGPT (29/10/2026)
+    'เอ็นเต้ไก่': 'entaikai.webp',                                       // ร้านสร้างด้วย ChatGPT (29/10/2026)
+    'ไส้กรอกแดง': 'sausage_red.webp', 'ไส้กรอกแดงแหลมทอง': 'sausage_red.webp', // ร้านสร้างด้วย ChatGPT (29/10/2026)
+    'โบโลน่า แผ่นกลม': 'bologna.webp', 'ปูอัดเมก้า': 'crabstick.webp', 'ไส้กรอกชีส': 'cheese_sausage.webp', // ร้านสร้างด้วย ChatGPT (29/10/2026)
+    'แฮมหมู แผ่นกลม': 'ham.webp', 'เต้าหู้ชีส': 'cheese_tofu.webp', 'ไส้กรอกนม': 'milk_sausage.webp', // ร้านสร้างด้วย ChatGPT (29/10/2026)
+    'เต้าหู้ปลา': 'fish_tofu.webp', 'ฟองเต้าหู้สามเหลี่ยม': 'tofu_skin.webp', // ร้านสร้างด้วย ChatGPT (29/10/2026)
+    'ไส้กรอกพันเบคอน': 'bacon_sausage.webp', 'แฮมเบคอนเสียบไม้': 'bacon_ham.webp', 'แฮมเบคอน': 'bacon_ham.webp', // ร้านสร้างด้วย ChatGPT (29/10/2026)
     'หน่อไม้ฝรั่งพันสามชั้น': UNSPLASH('1783788357802-15102a0fb6b4'),   // หน่อไม้ฝรั่งพันเบคอน โดย HYEWON HWANG
-    'สันในไก่เสียบไม้': UNSPLASH('1705359573325-f2006d5e459f'),         // ไก่เสียบไม้ โดย Mihir Sabnis
+    'สันในไก่เสียบไม้': 'kaisannai.webp',                                // ร้านสร้างด้วย ChatGPT (29/10/2026)
+    'เห็ดเข็มทองพันสามชั้น': 'enoki_pork.webp',                          // ร้านสร้างด้วย ChatGPT (29/10/2026)
     'ข้าวโพด': PHOTO_CORN, 'ข้าวโพดเสียบไม้': PHOTO_CORN, 'ข้าวโพดหวาน': PHOTO_CORN,
   };
   function menuPhoto(name) {
     const v = MENU_PHOTOS[String(name || '').trim()] || '';
-    return !v ? '' : /^https:\/\//.test(v) ? v : 'assets/menu/' + v + '.jpg';
+    return !v ? '' : /^https:\/\//.test(v) ? v : 'assets/menu/' + v + (/\.\w+$/.test(v) ? '' : '.jpg');
   }
 
   function renderMenu() {
