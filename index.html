@@ -1189,7 +1189,8 @@
     const data = await api();
     if (!data || !data.ok || !Array.isArray(data.menu)) throw new Error('menu');
     state.closed = data.closed === true;
-    state.menu = data.menu.map(m => ({
+    // เมนูที่หลังร้านตั้งเป็น "ไม่ขาย" ไม่ต้องแสดงให้ลูกค้าเห็นเลย (ต่างจาก "หมด" ที่ยังเห็นเป็นสีเทา)
+    state.menu = data.menu.filter(m => m && m.hidden !== true).map(m => ({
       cat: String(m.cat), name: String(m.name), price: Number(m.price) || 0,
       unit: String(m.unit || ''), available: m.available === true, promo: m.promo === true,
     }));

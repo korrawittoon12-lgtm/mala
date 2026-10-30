@@ -130,12 +130,19 @@
   #stock h2 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 1.5rem; }
   #stock .who { margin: 0 0 .5rem; color: var(--ink-soft); }
   #stock h3 { margin: .875rem 0 .25rem; font-size: 1rem; color: var(--ink-soft); }
-  .stock-row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; width: 100%; min-height: 3.25rem; padding: .375rem 0; border: 0; border-top: 1px solid var(--celadon-line); background: none; color: var(--ink); font: inherit; font-size: 1.0625rem; text-align: left; }
-  .stock-row .pill { flex: none; min-width: 5.5rem; padding: .375rem .75rem; border-radius: 999px; background: #1E6B3A; color: #fff; font-weight: 600; text-align: center; }
-  .stock-row.is-out .pill { background: var(--chili); }
-  .stock-row.is-out .name { color: var(--ink-soft); text-decoration: line-through; }
-  .stock-row.is-busy { opacity: .55; }
   #stock .btn { margin-top: .75rem; }
+  /* แต่ละเมนูมี 3 ปุ่ม: มีขาย (เขียว) / หมด (แดง ลูกค้าเห็นเป็นสีเทา) / ไม่ขาย (เทา ลูกค้าไม่เห็นเมนูเลย) */
+  .stock-item { display: flex; align-items: center; justify-content: space-between; gap: .5rem; min-height: 3.25rem; padding: .375rem 0; border-top: 1px solid var(--celadon-line); }
+  .stock-item .name { font-size: 1.0625rem; min-width: 0; }
+  .stock-item[data-state="out"] .name { color: var(--ink-soft); text-decoration: line-through; }
+  .stock-item[data-state="off"] .name { color: var(--ink-soft); opacity: .7; }
+  .stock-item.is-busy { opacity: .55; }
+  .seg { flex: none; display: flex; border: 1px solid var(--celadon-line); border-radius: 999px; overflow: hidden; }
+  .seg button { min-width: 3.75rem; min-height: 2.5rem; padding: 0 .625rem; border: 0; background: transparent; color: var(--ink-soft); font: inherit; font-size: .9375rem; font-weight: 600; }
+  .seg button + button { border-left: 1px solid var(--celadon-line); }
+  .seg button[aria-pressed="true"][data-to="on"] { background: #1E6B3A; color: #fff; }
+  .seg button[aria-pressed="true"][data-to="out"] { background: var(--chili); color: #fff; }
+  .seg button[aria-pressed="true"][data-to="off"] { background: #5E564B; color: #fff; }
   .card-foot { display: flex; gap: .5rem; padding: .625rem .75rem; border-top: 1px solid var(--celadon-line); align-items: center; }
   .card-foot .sum { flex: 1; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.3; }
   .card-foot .sum small { display: block; font-weight: 400; color: var(--chili-deep); }
@@ -206,7 +213,7 @@
   <h1>ออเดอร์หลังร้าน</h1>
   <p id="status" role="status"></p>
   <button class="btn quiet small" id="soundBtn" type="button" hidden>แตะเพื่อเปิดเสียงเตือน</button>
-  <button class="btn quiet small" id="stockBtn" type="button" hidden>ของหมด / มีขาย</button>
+  <button class="btn quiet small" id="stockBtn" type="button" hidden>ของหมด / ไม่ขาย</button>
   <button class="btn quiet small" id="sumBtn" type="button" hidden>สรุปยอด / ปิดรับออเดอร์</button>
 </header>
 <p class="closed-bar" id="closedBar" role="status" hidden>ปิดรับออเดอร์แล้ว ลูกค้าสั่งเพิ่มไม่ได้ (เปิดรับใหม่ได้ที่ปุ่ม สรุปยอด)</p>
@@ -248,8 +255,8 @@
 </dialog>
 
 <dialog id="stock" aria-labelledby="stockTitle">
-  <h2 id="stockTitle">ของหมด / มีขาย</h2>
-  <p class="who">แตะที่เมนูเพื่อสลับ ลูกค้าจะเห็นทันทีที่เปิดหรือโหลดเมนูใหม่</p>
+  <h2 id="stockTitle">มีขาย / หมด / ไม่ขาย</h2>
+  <p class="who"><b>หมด</b> ลูกค้ายังเห็นเมนูเป็นสีเทา สั่งไม่ได้ · <b>ไม่ขาย</b> ลูกค้าไม่เห็นเมนูนี้เลย · มีผลทันทีที่ลูกค้าเปิดหรือโหลดเมนูใหม่</p>
   <div id="stockList"></div>
   <p class="msg" id="stockMsg" role="status"></p>
   <button class="btn quiet" type="button" id="stockClose">กลับไปหน้าออเดอร์</button>
@@ -372,7 +379,7 @@
         { id: 'old-2', date: '2026-10-03', time: '19:20', status: 'เสร็จแล้ว', total: 84, lines: [{ name: 'หมูสไลซ์', qty: 4 }, { name: 'ไก่หมัก', qty: 3 }] },
         { id: 'old-1', date: '2026-09-26', time: '18:05', status: 'เสร็จแล้ว', total: 60, lines: [{ name: 'เนื้อวัวสไลซ์', qty: 5 }] },
       ] };
-      if (body.action === 'stock') { const m = demoMenu.find(x => x.name === body.name); if (!m) return { ok: false, error: 'ไม่พบเมนูนี้' }; m.available = body.available === true; return { ok: true, name: m.name, available: m.available }; }
+      if (body.action === 'stock') { const m = demoMenu.find(x => x.name === body.name); if (!m) return { ok: false, error: 'ไม่พบเมนูนี้' }; m.available = body.available === true; m.hidden = body.hidden === true; return { ok: true, name: m.name, available: m.available, hidden: m.hidden }; }
       if (body.action === 'report') return demoReport(body.range);
       if (body.action === 'summary' || body.action === 'closeDay' || body.action === 'openDay') {
         if (body.action === 'closeDay') { demoShut = true; demoShutAt = new Date().toTimeString().slice(0, 5); }
@@ -930,17 +937,24 @@
   $('sum').addEventListener('click', e => { if (e.target === $('sum')) $('sum').close(); });
   $('sum').addEventListener('close', () => { disarm(); if (timer) refresh(); });
 
-  // ---------- ของหมด / มีขาย ----------
-  // แตะที่เมนูเพื่อสลับสถานะ หน้าจอเปลี่ยนทันที แล้วจดลงช่อง "พร้อมขาย" ในแท็บเมนูของชีต ถ้าจดไม่สำเร็จจะเปลี่ยนกลับและแจ้ง
+  // ---------- มีขาย / หมด / ไม่ขาย ----------
+  // แต่ละเมนูมี 3 ปุ่ม หน้าจอเปลี่ยนทันที แล้วจดลงแท็บเมนูของชีต ("พร้อมขาย" คอลัมน์ E และ "ไม่ขาย" คอลัมน์ G) ถ้าจดไม่สำเร็จจะเปลี่ยนกลับและแจ้ง
+  // หมด = ลูกค้ายังเห็นเมนูเป็นสีเทา ไม่ขาย = ลูกค้าไม่เห็นเมนูนี้เลย
   let stockMenu = [];
   const stockBusy = new Set();
+  const stockState = m => m.hidden ? 'off' : m.available ? 'on' : 'out';
+  const STOCK_LABEL = { on: 'มีขาย', out: 'หมด', off: 'ไม่ขาย' };
   function renderStock() {
     const cats = [];
     stockMenu.forEach(m => { if (!cats.includes(m.cat)) cats.push(m.cat); });
-    const out = stockMenu.filter(m => !m.available).length;
-    $('stockList').innerHTML = (out ? `<p class="sum-warn">ตอนนี้ปิดไว้ ${out} เมนู</p>` : '') + cats.map(c => `<h3>${esc(c)}</h3>` + stockMenu.filter(m => m.cat === c).map(m =>
-      `<button type="button" class="stock-row${m.available ? '' : ' is-out'}${stockBusy.has(m.name) ? ' is-busy' : ''}" data-stock="${esc(m.name)}" aria-pressed="${m.available ? 'false' : 'true'}">
-        <span class="name">${esc(m.name)}</span><span class="pill">${m.available ? 'มีขาย' : 'หมด'}</span></button>`).join('')).join('');
+    const out = stockMenu.filter(m => stockState(m) === 'out').length, off = stockMenu.filter(m => m.hidden).length;
+    const warn = [out ? 'หมด ' + out + ' เมนู' : '', off ? 'ไม่ขาย ' + off + ' เมนู' : ''].filter(Boolean).join(' · ');
+    $('stockList').innerHTML = (warn ? `<p class="sum-warn">ตอนนี้ ${warn}</p>` : '') + cats.map(c => `<h3>${esc(c)}</h3>` + stockMenu.filter(m => m.cat === c).map(m => {
+      const st = stockState(m);
+      return `<div class="stock-item${stockBusy.has(m.name) ? ' is-busy' : ''}" data-state="${st}" data-stock="${esc(m.name)}">
+        <span class="name">${esc(m.name)}</span><span class="seg" role="group" aria-label="${esc(m.name)}">${['on', 'out', 'off'].map(k =>
+          `<button type="button" data-to="${k}" aria-pressed="${st === k}">${STOCK_LABEL[k]}</button>`).join('')}</span></div>`;
+    }).join('')).join('');
   }
   async function loadStock() {
     $('stockMsg').textContent = '';
@@ -951,7 +965,7 @@
         const res = await fetch(CFG.API_URL + '?action=menu', { cache: 'no-store' });
         const data = await res.json();
         if (!data || !data.ok || !Array.isArray(data.menu)) throw new Error('menu');
-        stockMenu = data.menu.map(m => ({ cat: String(m.cat), name: String(m.name), available: m.available === true }));
+        stockMenu = data.menu.map(m => ({ cat: String(m.cat), name: String(m.name), available: m.available === true, hidden: m.hidden === true }));
       }
       renderStock();
     } catch (e) {
@@ -961,22 +975,25 @@
   }
   $('stockBtn').addEventListener('click', () => { if (!$('stock').open) $('stock').showModal(); loadStock(); });
   $('stockList').addEventListener('click', async e => {
-    const btn = e.target.closest('button[data-stock]');
-    if (!btn) return;
-    const m = stockMenu.find(x => x.name === btn.dataset.stock);
-    if (!m || stockBusy.has(m.name)) return;
-    const want = !m.available;
-    m.available = want; stockBusy.add(m.name); renderStock();
+    const btn = e.target.closest('button[data-to]');
+    const row = btn && btn.closest('[data-stock]');
+    if (!row) return;
+    const m = stockMenu.find(x => x.name === row.dataset.stock);
+    const to = btn.dataset.to;
+    if (!m || stockBusy.has(m.name) || stockState(m) === to) return;
+    const before = { available: m.available, hidden: m.hidden };
+    m.available = to === 'on'; m.hidden = to === 'off';
+    stockBusy.add(m.name); renderStock();
     $('stockMsg').textContent = '';
     let data = null;
-    try { data = await api({ action: 'stock', name: m.name, available: want }); } catch (err) {}
+    try { data = await api({ action: 'stock', name: m.name, available: m.available, hidden: m.hidden }); } catch (err) {}
     stockBusy.delete(m.name);
     if (!data || !data.ok) {
-      m.available = !want;
+      Object.assign(m, before);
       $('stockMsg').textContent = (data && data.error) || 'บันทึกไม่สำเร็จ ลองแตะอีกครั้ง';
     } else {
-      m.available = data.available === true;
-      $('stockMsg').textContent = m.name + (m.available ? ' กลับมาขายแล้ว' : ' ตั้งเป็นของหมดแล้ว');
+      m.available = data.available === true; m.hidden = data.hidden === true;
+      $('stockMsg').textContent = m.name + { on: ' กลับมาขายแล้ว', out: ' ตั้งเป็นของหมดแล้ว', off: ' ตั้งเป็นไม่ขายแล้ว ลูกค้าจะไม่เห็นเมนูนี้' }[stockState(m)];
     }
     renderStock();
   });
