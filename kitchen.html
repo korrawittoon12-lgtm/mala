@@ -91,7 +91,9 @@
   .past .now { color: var(--chili-deep); font-weight: 500; }
   #past .btn { margin-top: .75rem; }
   /* แถบ "ปิดรับออเดอร์แล้ว" และแผ่นสรุปยอดของวัน */
-  .closed-bar { margin: 0; padding: .625rem 1rem; background: var(--chili); color: #fff; font-weight: 600; text-align: center; }
+  .closed-bar { margin: 0; padding: .625rem 1rem; background: var(--chili); color: #fff; font-weight: 600; text-align: center; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .5rem .875rem; }
+  .closed-bar[hidden] { display: none; }
+  .closed-bar .btn { margin: 0; background: #fff; color: #8E0D11; border-color: #fff; font-weight: 700; }
   #sum { width: min(95vw, 34rem); max-height: 92vh; overflow-y: auto; padding: 1rem; }
   #sum h2 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 1.5rem; }
   #sum .who { margin: 0 0 .5rem; color: var(--ink-soft); }
@@ -216,7 +218,7 @@
   <button class="btn quiet small" id="stockBtn" type="button" hidden>ของหมด / ไม่ขาย</button>
   <button class="btn quiet small" id="sumBtn" type="button" hidden>สรุปยอด / ปิดรับออเดอร์</button>
 </header>
-<p class="closed-bar" id="closedBar" role="status" hidden>ปิดรับออเดอร์แล้ว ลูกค้าสั่งเพิ่มไม่ได้ (เปิดรับใหม่ได้ที่ปุ่ม สรุปยอด)</p>
+<div class="closed-bar" id="closedBar" hidden><span role="status" id="closedText">ร้านปิดอยู่ ลูกค้าสั่งไม่ได้</span><button class="btn small" type="button" id="openShop">เปิดรับออเดอร์</button></div>
 
 <section class="gate" id="gate">
   <label for="key">รหัสพนักงาน</label>
@@ -250,7 +252,7 @@
   <div id="sumBody"></div>
   <p class="msg" id="sumMsg" role="status"></p>
   <button class="btn" type="button" id="sumShut" hidden>ปิดรับออเดอร์</button>
-  <button class="btn quiet" type="button" id="sumReopen" hidden>เปิดรับออเดอร์อีกครั้ง</button>
+  <button class="btn quiet" type="button" id="sumReopen" hidden>เปิดรับออเดอร์</button>
   <button class="btn quiet" type="button" id="sumBack">กลับไปหน้าออเดอร์</button>
 </dialog>
 
@@ -799,7 +801,7 @@
 
   // ---------- สรุปยอดของวัน และปิดรับออเดอร์ ----------
   // กดปุ่ม "สรุปยอด" เพื่อดูยอดได้ตลอดโดยยังไม่ปิดร้าน ในแผ่นสรุปมีปุ่มปิดรับออเดอร์ (ต้องกด 2 ครั้ง กันกดพลาด)
-  // หลังปิดรับ ลูกค้าจะสั่งไม่ได้จนกว่าจะกด "เปิดรับออเดอร์อีกครั้ง" หรือขึ้นวันใหม่
+  // หลังปิดรับ ร้านปิดค้างไว้ (ขึ้นวันใหม่ก็ยังปิด) ลูกค้าจะสั่งไม่ได้จนกว่าจะกด "เปิดรับออเดอร์" ที่แถบแดงด้านบน หรือในแผ่นสรุปยอด
   function showClosed() { $('closedBar').hidden = !closed || $('board').hidden; }
   function disarm() { armedAt = 0; $('sumShut').textContent = 'ปิดรับออเดอร์'; }
 
@@ -928,6 +930,20 @@
     const s = await callSummary({ action: 'closeDay' }, 'ปิดรับออเดอร์ไม่สำเร็จ ลองกดอีกครั้ง');
     if (!s) { disarm(); return; }
     $('sumMsg').textContent = 'ปิดรับออเดอร์แล้ว' + (s.saved ? ' จดสรุปลงชีตแล้ว' : ' แต่จดสรุปลงชีตไม่ได้') + (s.notified ? ' และส่งสรุปเข้า LINE แล้ว' : '');
+  });
+  // ปุ่ม "เปิดรับออเดอร์" บนแถบแดง: ตอนเริ่มขายแต่ละวันกดที่นี่ได้เลย ไม่ต้องเข้าแผ่นสรุปยอด
+  $('openShop').addEventListener('click', async () => {
+    const b = $('openShop');
+    if (b.disabled) return;
+    b.disabled = true; b.textContent = 'กำลังเปิดร้าน…';
+    let data = null;
+    try { data = await api({ action: 'openDay' }); } catch (e) {}
+    b.disabled = false; b.textContent = 'เปิดรับออเดอร์';
+    if (!data || !data.ok) { $('closedText').textContent = (data && data.error) || 'เปิดร้านไม่สำเร็จ ลองกดอีกครั้ง'; return; }
+    closed = data.closed === true;
+    $('closedText').textContent = 'ร้านปิดอยู่ ลูกค้าสั่งไม่ได้';
+    showClosed();
+    $('status').textContent = 'เปิดรับออเดอร์แล้ว ลูกค้าสั่งได้ตามปกติ';
   });
   $('sumReopen').addEventListener('click', async () => {
     const s = await callSummary({ action: 'openDay' }, 'เปิดรับออเดอร์ไม่สำเร็จ ลองกดอีกครั้ง');
